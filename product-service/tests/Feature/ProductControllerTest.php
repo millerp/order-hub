@@ -77,6 +77,24 @@ class ProductControllerTest extends TestCase
         $this->assertDatabaseMissing('products', ['name' => 'Blocked Product']);
     }
 
+    public function test_admin_role_is_case_insensitive_for_create_product()
+    {
+        $user = new \App\Models\DummyUser;
+        $user->id = 3;
+        $user->role = 'ADMIN';
+        $this->actingAs($user);
+
+        $response = $this->postJson('/api/v1/products', [
+            'name' => 'Case Product',
+            'description' => 'Description',
+            'price' => 10.99,
+            'stock' => 3,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('name', 'Case Product');
+    }
+
     public function test_can_reserve_stock()
     {
         $product = Product::factory()->create(['stock' => 10]);

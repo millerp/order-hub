@@ -28,7 +28,7 @@ class JwtMiddleware
 
             $user = new DummyUser;
             $user->id = $decoded->sub;
-            $user->role = $decoded->role ?? 'customer';
+            $user->role = strtolower((string) ($decoded->role ?? 'customer'));
 
             $request->setUserResolver(function () use ($user) {
                 return $user;
