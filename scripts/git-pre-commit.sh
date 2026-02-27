@@ -32,7 +32,7 @@ for SERVICE in $SERVICES; do
         
         # Check if container is running
         if [ "$(docker inspect -f '{{.State.Running}}' $CONTAINER_NAME 2>/dev/null)" = "true" ]; then
-            docker exec -T "$CONTAINER_NAME" ./vendor/bin/pint $SERVICE_FILES
+            docker exec "$CONTAINER_NAME" ./vendor/bin/pint $SERVICE_FILES
         else
             echo "Warning: Container $CONTAINER_NAME is not running. Using 'docker compose run' instead..."
             docker compose run --rm -T "$SERVICE" ./vendor/bin/pint $SERVICE_FILES
