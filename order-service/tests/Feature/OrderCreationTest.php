@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\DummyUser;
-use App\Models\Order;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Facades\Http;
