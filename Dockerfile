@@ -7,22 +7,35 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
     libpq-dev \
-    librdkafka-dev
-
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    pkg-config \
+    build-essential \
+    passwd \
+    && which git && which zip && which unzip
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd sockets
+RUN docker-php-ext-install pdo_mysql exif pcntl bcmath gd sockets zip && \
+    docker-php-ext-install mbstring || (apt-get install -y libonig-dev && docker-php-ext-install mbstring)
 
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
 
 # Install Kafka extension
-RUN pecl install rdkafka && docker-php-ext-enable rdkafka
+RUN apt-get update && apt-get install -y librdkafka-dev && \
+    pecl install rdkafka-6.0.5 && docker-php-ext-enable rdkafka
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Add a non-root user
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN groupadd -g ${GROUP_ID} www-data-group || true && \
+    useradd -u ${USER_ID} -m -g www-data-group www-user || \
+    useradd -u ${USER_ID} -m www-user || true
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -36,7 +49,14 @@ RUN curl -sSfL -o rr.tar.gz "https://github.com/roadrunner-server/roadrunner/rel
     && chmod +x /usr/local/bin/rr \
     && rm rr.tar.gz
 
+# Copy Laravel entrypoint to install dependencies at container start and then run Octane
+COPY docker/laravel-entrypoint.sh /usr/local/bin/laravel-entrypoint.sh
+RUN chmod +x /usr/local/bin/laravel-entrypoint.sh
+
 WORKDIR /app
 
-# Run Laravel Octane with RoadRunner (app code mounted per service)
-CMD ["php", "artisan", "octane:start", "--server=roadrunner", "--host=0.0.0.0", "--port=8000"]
+# Ensure correct permissions for /app
+RUN chown -R www-user:$(id -gn www-user) /app || true
+
+# Use entrypoint to install Composer deps on startup, then start Octane
+ENTRYPOINT ["/usr/local/bin/laravel-entrypoint.sh"]
