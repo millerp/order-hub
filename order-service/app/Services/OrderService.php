@@ -5,11 +5,10 @@ namespace App\Services;
 use App\Contracts\OrderRepositoryInterface;
 use App\Contracts\OrderServiceInterface;
 use App\Models\Order;
+use App\Models\OutboxEvent;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Junges\Kafka\Facades\Kafka;
-use Junges\Kafka\Message\Message;
+use Illuminate\Support\Facades\DB;
 
 class OrderService implements OrderServiceInterface
 {
@@ -57,38 +56,28 @@ class OrderService implements OrderServiceInterface
             throw new \RuntimeException('Failed to reserve stock: '.json_encode($err), 400);
         }
 
-        $order = $this->orderRepository->create([
-            'user_id' => $data['user_id'],
-            'product_id' => $data['product_id'],
-            'quantity' => $data['quantity'],
-            'total_amount' => $totalAmount,
-            'status' => 'pending',
-        ]);
-
-        $this->publishOrderCreated($order);
-
-        return $order;
-    }
-
-    private function publishOrderCreated(Order $order): void
-    {
-        try {
-            $payload = [
-                'order_id' => (string) $order->id,
-                'user_id' => (string) $order->user_id,
-                'amount' => (float) $order->total_amount,
+        return DB::transaction(function () use ($data, $totalAmount) {
+            $order = $this->orderRepository->create([
+                'user_id' => $data['user_id'],
+                'product_id' => $data['product_id'],
+                'quantity' => $data['quantity'],
+                'total_amount' => $totalAmount,
                 'status' => 'pending',
-            ];
+            ]);
 
-            $message = new Message(
-                body: $payload,
-            );
+            OutboxEvent::create([
+                'aggregate_type' => 'order',
+                'aggregate_id' => (string) $order->id,
+                'event_type' => 'order.created',
+                'payload' => [
+                    'order_id' => (string) $order->id,
+                    'user_id' => (string) $order->user_id,
+                    'amount' => (float) $order->total_amount,
+                    'status' => 'pending',
+                ],
+            ]);
 
-            Kafka::publish()->onTopic('order.created')
-                ->withMessage($message)
-                ->send();
-        } catch (\Exception $e) {
-            Log::error('Kafka Publish Failed: '.$e->getMessage());
-        }
+            return $order;
+        });
     }
 }

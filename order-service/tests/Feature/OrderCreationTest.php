@@ -37,5 +37,11 @@ class OrderCreationTest extends TestCase
             'product_id' => 1,
             'status' => 'pending',
         ]);
+
+        $this->assertDatabaseHas('outbox_events', [
+            'aggregate_type' => 'order',
+            'event_type' => 'order.created',
+            'aggregate_id' => '1',
+        ]);
     }
 }

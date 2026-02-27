@@ -126,7 +126,7 @@ The script will:
    docker exec orderhub-kafka /opt/kafka/bin/kafka-topics.sh --create --topic payment.failed.dlq --bootstrap-server localhost:9092
    ```
 7. Done! Endpoints are mapped to ports `8001-8006`.
-   - Kafka Consumers run automatically in dedicated containers: `order-consumer`, `payment-consumer`, `notification-consumer`.
+   - Kafka workers run automatically in dedicated containers: `order-consumer`, `order-outbox-publisher`, `payment-consumer`, `notification-consumer`.
    - Kafka-UI is available at `http://localhost:8080`.
 
 ## Kafka Topic Design
