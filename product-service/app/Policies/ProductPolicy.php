@@ -2,16 +2,16 @@
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class ProductPolicy
 {
-    public function create(User $user): bool
+    public function create(Authenticatable $user): bool
     {
         return strtolower((string) ($user->role ?? 'customer')) === 'admin';
     }
 
-    public function update(User $user): bool
+    public function update(Authenticatable $user): bool
     {
         return strtolower((string) ($user->role ?? 'customer')) === 'admin';
     }
