@@ -46,7 +46,7 @@ sequenceDiagram
 ## Code Quality
 This project uses **Laravel Pint** for code style consistency. A Git pre-commit hook is provided to automatically run Pint on staged PHP files.
 
-To install the hook, run:
+The hook is automatically installed during the project initialization via `init-project.sh`. To install it manually, run:
 ```bash
 chmod +x scripts/install-hooks.sh
 ./scripts/install-hooks.sh
@@ -59,12 +59,10 @@ The hook will:
 4. Automatically re-stage any files that were fixed by Pint.
 
 ## Laravel Octane (FrankenPHP)
-All Laravel API services run with **Laravel Octane** and **RoadRunner** for high performance: the application stays in memory between requests. Each service has:
-- `config/octane.php` – Octane listeners and options
-- `.rr.yaml` – RoadRunner worker/config (HTTP on `0.0.0.0:8000`, 4 workers)
+All Laravel API services run with **Laravel Octane** and **FrankenPHP** for high performance: the application stays in memory between requests. Each service is served on port `8000` inside its container.
 
-The Docker image includes the RoadRunner binary; the container runs:
-`php artisan octane:start --server=roadrunner --host=0.0.0.0 --port=8000`.
+The Docker image includes FrankenPHP; the container runs:
+`php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000`.
 
 ## Setup Instructions
 
@@ -83,6 +81,9 @@ The script will:
 5. Execute database migrations.
 6. Initialize Kafka topics.
 7. Start the Gateway and Frontend.
+8. **Kafka-UI**: Manage and visualize Kafka topics/messages at `http://localhost:8080`.
+9. **Git Hooks**: Automatic code styling on commit.
+10. **GitHub Actions**: Automated unit tests on PRs.
 
 ---
 
@@ -125,7 +126,8 @@ The script will:
    docker exec orderhub-kafka /opt/kafka/bin/kafka-topics.sh --create --topic payment.failed.dlq --bootstrap-server localhost:9092
    ```
 7. Done! Endpoints are mapped to ports `8001-8006`.
-   - Start the consumers by accessing their respective containers, or adding worker entries to the compose file. e.g., `docker exec -d orderhub-payment-service php artisan kafka:consume-order`
+   - Kafka Consumers run automatically in dedicated containers: `order-consumer`, `payment-consumer`, `notification-consumer`.
+   - Kafka-UI is available at `http://localhost:8080`.
 
 ## Kafka Topic Design
 To support loose coupling, Kafka topics act as the primary communication contract:
