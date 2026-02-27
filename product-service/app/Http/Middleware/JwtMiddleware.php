@@ -2,19 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\DummyUser;
 use Closure;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-
-class DummyUser extends Authenticatable
-{
-    public $id;
-
-    public $role;
-}
 
 class JwtMiddleware
 {

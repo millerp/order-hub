@@ -2,32 +2,41 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\DummyUser;
+use App\Models\Order;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class OrderCreationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithoutMiddleware;
 
     public function test_can_create_order_successfully()
     {
-        // Mocking the user with DummyUser logic via middleware is tricky in pure Feature Test without token,
-        // so we just fake the HTTP requests and simulate a dummy request overriding the token validation.
+        $user = new DummyUser;
+        $user->id = 1;
+        $user->role = 'customer';
+        $this->actingAs($user);
 
         Http::fake([
-            '*/api/v1/products/1' => Http::response(['id' => 1, 'price' => 100, 'stock' => 10], 200),
-            '*/api/v1/products/1/reserve' => Http::response(['message' => 'Stock reserved'], 200),
+            '*/api/v1/products/1' => Http::response(['data' => ['id' => 1, 'price' => 100, 'stock' => 10]], 200),
+            '*/api/v1/products/1/reserve' => Http::response(['message' => 'Stock reserved', 'remaining_stock' => 8], 200),
         ]);
 
-        // Let's test the endpoint logic by expecting a specific structured error when Auth is missing,
-        // since we didn't generate authentic JWT for the test environment.
-        $response = $this->postJson('/api/v1/orders', [
+        $response = $this->withHeader('Authorization', 'Bearer fake-token')->postJson('/api/v1/orders', [
             'product_id' => 1,
             'quantity' => 2,
         ]);
 
-        $response->assertStatus(401);
+        $response->assertStatus(201)
+            ->assertJsonPath('status', 'pending');
+
+        $this->assertDatabaseHas('orders', [
+            'user_id' => 1,
+            'product_id' => 1,
+            'status' => 'pending',
+        ]);
     }
 }
