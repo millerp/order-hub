@@ -52,6 +52,26 @@ The Docker image includes the RoadRunner binary; the container runs:
 `php artisan octane:start --server=roadrunner --host=0.0.0.0 --port=8000`.
 
 ## Setup Instructions
+
+To simplify project startup, use the automated setup script:
+
+```bash
+chmod +x init-project.sh
+./init-project.sh
+```
+
+The script will:
+1. Configure `.env` files for all services.
+2. Spin up the infrastructure (Databases, Redis, Kafka).
+3. Install Composer dependencies inside the containers.
+4. Generate application keys and RSA keys for JWT.
+5. Execute database migrations.
+6. Initialize Kafka topics.
+7. Start the Gateway and Frontend.
+
+---
+
+### Manual Setup (Step-by-Step)
 1. Ensure Docker Desktop is running.
 2. Install PHP dependencies (including `laravel/octane`) in each service. From the repo root:
    ```bash
