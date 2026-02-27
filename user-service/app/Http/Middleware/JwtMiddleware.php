@@ -19,7 +19,7 @@ class JwtMiddleware
         }
 
         try {
-            $publicKeyPath = storage_path('oauth-public.key');
+            $publicKeyPath = storage_path('keys/oauth-public.key');
             if (!file_exists($publicKeyPath)) {
                 return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
             }

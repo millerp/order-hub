@@ -49,7 +49,7 @@ RUN curl -sSfL -o rr.tar.gz "https://github.com/roadrunner-server/roadrunner/rel
     && rm -rf rr.tar.gz roadrunner-${RR_VERSION}-linux-amd64
 
 # Install FrankenPHP binary for Laravel Octane
-ARG FRANKENPHP_VERSION=1.4.3
+ARG FRANKENPHP_VERSION=1.11.3
 RUN curl -sSfL -o frankenphp "https://github.com/dunglas/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
     && chmod +x frankenphp \
     && mv frankenphp /usr/local/bin/frankenphp

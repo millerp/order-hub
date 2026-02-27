@@ -50,22 +50,18 @@ echo -e "${BLUE}Spinning up infrastructure (Databases, Redis, Kafka)...${NC}"
 export CURRENT_UID=$(id -u)
 export CURRENT_GID=$(id -g)
 
-# Pre-create RSA key placeholders to prevent Docker from creating them as directories
-# This is crucial because multiple services mount oauth-public.key as a file
-mkdir -p auth-service/storage
-if [ -d "auth-service/storage/oauth-public.key" ]; then
-    rm -rf "auth-service/storage/oauth-public.key"
-fi
-touch auth-service/storage/oauth-public.key
-chmod 644 auth-service/storage/oauth-public.key
+# Pre-create RSA key directory to prevent Docker from creating it as a directory with wrong permissions
+mkdir -p auth-service/storage/keys
+# Ensure the placeholder exists and belongs to current user
+touch auth-service/storage/keys/oauth-public.key
+chmod 644 auth-service/storage/keys/oauth-public.key
 
-# Also clean up any accidental directories in other services where this file might be mounted
+# Clean up any legacy file-level mounts that might still be in the host's storage
 for service in "${services[@]}"; do
-    if [ "$service" != "auth-service" ]; then
-        if [ -d "$service/storage/oauth-public.key" ]; then
-            rm -rf "$service/storage/oauth-public.key"
-        fi
+    if [ -f "$service/storage/oauth-public.key" ]; then
+        rm -f "$service/storage/oauth-public.key"
     fi
+    mkdir -p "$service/storage/keys"
 done
 
 docker compose up -d auth-db user-db product-db order-db payment-db notification-db redis kafka
@@ -119,10 +115,12 @@ for service in "${services[@]}"; do
         # 7. Generate RSA keys specifically for Auth Service and restart services that depend on it
         if [ "$service" == "auth-service" ]; then
             echo -e "${BLUE}Generating RSA keys for JWT in auth-service...${NC}"
-            # Clear placeholders and regenerate keys properly
-            docker exec orderhub-auth-service bash -c "rm -f storage/oauth-private.key storage/oauth-public.key && openssl genrsa -out storage/oauth-private.key 2048 && openssl rsa -in storage/oauth-private.key -pubout -out storage/oauth-public.key"
+            # Ensure the directory exists inside the container
+            docker exec orderhub-auth-service mkdir -p storage/keys
+            # Generate keys properly inside the new directory
+            docker exec orderhub-auth-service bash -c "rm -f storage/keys/oauth-private.key storage/keys/oauth-public.key && openssl genrsa -out storage/keys/oauth-private.key 2048 && openssl rsa -in storage/keys/oauth-private.key -pubout -out storage/keys/oauth-public.key"
             # Ensure permissions on keys
-            docker exec orderhub-auth-service chmod 644 storage/oauth-public.key storage/oauth-private.key
+            docker exec orderhub-auth-service chmod 644 storage/keys/oauth-public.key storage/keys/oauth-private.key
             
             # Since we generated new keys, and containers might have been started with a placeholder
             # and Octane might have cached it, we MUST restart the other services

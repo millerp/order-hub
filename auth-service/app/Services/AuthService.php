@@ -47,7 +47,7 @@ class AuthService implements AuthServiceInterface
 
     public function refreshToken(string $token): string
     {
-        $publicKey = file_get_contents(storage_path('oauth-public.key'));
+        $publicKey = file_get_contents(storage_path('keys/oauth-public.key'));
         $decoded = JWT::decode($token, new \Firebase\JWT\Key($publicKey, 'RS256'));
         $user = $this->userRepository->findById($decoded->sub);
         if (! $user) {
@@ -66,11 +66,11 @@ class AuthService implements AuthServiceInterface
             'exp' => time() + 3600,
         ];
 
-        if (! file_exists(storage_path('oauth-private.key'))) {
+        if (! file_exists(storage_path('keys/oauth-private.key'))) {
             throw new \RuntimeException('Private key not found. Please generate keys.');
         }
 
-        $privateKey = file_get_contents(storage_path('oauth-private.key'));
+        $privateKey = file_get_contents(storage_path('keys/oauth-private.key'));
 
         return JWT::encode($payload, $privateKey, 'RS256');
     }

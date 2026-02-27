@@ -125,7 +125,7 @@ services:
     container_name: orderhub-user-service
     volumes:
       - ./user-service:/app
-      - ./auth-service/storage/oauth-public.key:/app/storage/oauth-public.key:ro
+      - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8002:8000"
     depends_on:
@@ -136,7 +136,7 @@ services:
     container_name: orderhub-product-service
     volumes:
       - ./product-service:/app
-      - ./auth-service/storage/oauth-public.key:/app/storage/oauth-public.key:ro
+      - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8003:8000"
     depends_on:
@@ -147,7 +147,7 @@ services:
     container_name: orderhub-order-service
     volumes:
       - ./order-service:/app
-      - ./auth-service/storage/oauth-public.key:/app/storage/oauth-public.key:ro
+      - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8004:8000"
     depends_on:
@@ -158,7 +158,7 @@ services:
     container_name: orderhub-payment-service
     volumes:
       - ./payment-service:/app
-      - ./auth-service/storage/oauth-public.key:/app/storage/oauth-public.key:ro
+      - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8005:8000"
     depends_on:
@@ -169,7 +169,7 @@ services:
     container_name: orderhub-notification-service
     volumes:
       - ./notification-service:/app
-      - ./auth-service/storage/oauth-public.key:/app/storage/oauth-public.key:ro
+      - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8006:8000"
     depends_on:
