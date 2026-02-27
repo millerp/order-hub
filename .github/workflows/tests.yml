@@ -48,7 +48,7 @@ jobs:
       - name: Prepare Environment
         working-directory: ${{ matrix.service }}
         run: |
-          cp .env.example .env
+          cp .env.testing.example .env
           php artisan key:generate
 
       - name: Run Tests
