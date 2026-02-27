@@ -143,5 +143,14 @@ export CURRENT_UID=$(id -u)
 export CURRENT_GID=$(id -g)
 docker compose up -d gateway
 
+# 10. Install Git Hooks
+echo -e "${BLUE}Installing Git hooks...${NC}"
+if [ -f "scripts/install-hooks.sh" ]; then
+    chmod +x scripts/install-hooks.sh
+    ./scripts/install-hooks.sh
+else
+    echo -e "${RED}Warning: scripts/install-hooks.sh not found. Skipping hook installation.${NC}"
+fi
+
 echo -e "${GREEN}Installation completed successfully!${NC}"
 echo -e "Access the project at http://localhost"

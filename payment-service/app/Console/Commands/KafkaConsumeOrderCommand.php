@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Payment;
 use Junges\Kafka\Facades\Kafka;
-use Junges\Kafka\Contracts\KafkaConsumerMessage;
+use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Message\Message;
 
 class KafkaConsumeOrderCommand extends Command
@@ -17,8 +17,8 @@ class KafkaConsumeOrderCommand extends Command
     {
         $this->info("Listening for order.created events...");
 
-        $consumer = Kafka::createConsumer(['order.created'], 'payment-service-group')
-            ->withHandler(function (KafkaConsumerMessage $message) {
+        $consumer = Kafka::consumer(['order.created'], 'payment-service-group')
+            ->withHandler(function (ConsumerMessage $message) {
                 $payload = $message->getBody();
                 $orderId = $payload['order_id'];
                 $amount = $payload['amount'];
@@ -42,8 +42,8 @@ class KafkaConsumeOrderCommand extends Command
                     ]);
 
                     $topicName = $status === 'approved' ? 'payment.approved' : 'payment.failed';
-
-                    Kafka::publishOn($topicName)
+                    $this->info("Publishing payment event to topic: $topicName");
+                    Kafka::publish()->onTopic($topicName)
                         ->withMessage(new Message(
                             body: [
                                 'order_id' => $orderId,
@@ -58,7 +58,7 @@ class KafkaConsumeOrderCommand extends Command
                 } catch (\Exception $e) {
                     $this->error("Error processing order $orderId: " . $e->getMessage());
 
-                    Kafka::publishOn('payment.failed.dlq')
+                    Kafka::publish()->onTopic('payment.failed.dlq')
                         ->withMessage(new Message(
                             body: [
                                 'original_message' => $payload,

@@ -43,7 +43,22 @@ sequenceDiagram
     end
 ```
 
-## Laravel Octane (RoadRunner)
+## Code Quality
+This project uses **Laravel Pint** for code style consistency. A Git pre-commit hook is provided to automatically run Pint on staged PHP files.
+
+To install the hook, run:
+```bash
+chmod +x scripts/install-hooks.sh
+./scripts/install-hooks.sh
+```
+
+The hook will:
+1. Identify all staged PHP files.
+2. Group them by their respective service.
+3. Run the service-specific `vendor/bin/pint` on those files.
+4. Automatically re-stage any files that were fixed by Pint.
+
+## Laravel Octane (FrankenPHP)
 All Laravel API services run with **Laravel Octane** and **RoadRunner** for high performance: the application stays in memory between requests. Each service has:
 - `config/octane.php` – Octane listeners and options
 - `.rr.yaml` – RoadRunner worker/config (HTTP on `0.0.0.0:8000`, 4 workers)

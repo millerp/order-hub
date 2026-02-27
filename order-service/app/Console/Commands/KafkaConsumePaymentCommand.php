@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Order;
 use Junges\Kafka\Facades\Kafka;
-use Junges\Kafka\Contracts\KafkaConsumerMessage;
+use Junges\Kafka\Contracts\ConsumerMessage;
 
 class KafkaConsumePaymentCommand extends Command
 {
@@ -16,8 +16,8 @@ class KafkaConsumePaymentCommand extends Command
     {
         $this->info("Listening for payment events...");
 
-        $consumer = Kafka::createConsumer(['payment.approved', 'payment.failed'], 'order-service-group')
-            ->withHandler(function (KafkaConsumerMessage $message) {
+        $consumer = Kafka::consumer(['payment.approved', 'payment.failed'], 'order-service-group')
+            ->withHandler(function (ConsumerMessage $message) {
                 $payload = $message->getBody();
                 $order = Order::find($payload['order_id']);
 

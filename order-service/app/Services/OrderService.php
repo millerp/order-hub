@@ -85,7 +85,7 @@ class OrderService implements OrderServiceInterface
                 body: $payload,
             );
 
-            Kafka::publishOn('order.created')
+            Kafka::publish()->onTopic('order.created')
                 ->withMessage($message)
                 ->send();
         } catch (\Exception $e) {

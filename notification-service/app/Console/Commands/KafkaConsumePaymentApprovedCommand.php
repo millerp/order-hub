@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Notification;
 use Junges\Kafka\Facades\Kafka;
-use Junges\Kafka\Contracts\KafkaConsumerMessage;
+use Junges\Kafka\Contracts\ConsumerMessage;
 use Illuminate\Support\Facades\Log;
 
 class KafkaConsumePaymentApprovedCommand extends Command
@@ -13,12 +13,12 @@ class KafkaConsumePaymentApprovedCommand extends Command
     protected $signature = 'kafka:consume-payment-approved';
     protected $description = 'Consume payment.approved events for notifications';
 
-    public function handle()
+    public function handle(): void
     {
         $this->info("Listening for payment.approved events...");
 
-        $consumer = Kafka::createConsumer(['payment.approved'], 'notification-service-group')
-            ->withHandler(function (KafkaConsumerMessage $message) {
+        $consumer = Kafka::consumer(['payment.approved'], 'notification-service-group')
+            ->withHandler(function (ConsumerMessage $message) {
                 $payload = $message->getBody();
                 $paymentId = $payload['payment_id'];
                 $orderId = $payload['order_id'];
@@ -31,6 +31,7 @@ class KafkaConsumePaymentApprovedCommand extends Command
                 try {
                     // Simulate sending email
                     Log::info("Sending order confirmation email for Order ID: $orderId");
+                    $this->info("Sending order confirmation email for Order ID: $orderId");
 
                     Notification::create([
                         'payment_id' => $paymentId,

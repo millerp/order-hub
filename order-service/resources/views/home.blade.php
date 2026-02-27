@@ -14,7 +14,7 @@
 </head>
 <body>
     <div class="card">
-        <p>Você está acessando</p>
+        <p>You are accessing</p>
         <h1><span class="badge">{{ $service }}</span></h1>
     </div>
 </body>

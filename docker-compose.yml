@@ -42,6 +42,21 @@ services:
     networks:
       - orderhub-network
 
+  # Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: orderhub-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_METRICS_PORT=9997
+    networks:
+      - orderhub-network
+    depends_on:
+      - kafka
+
   # Databases (One per service)
   auth-db:
     image: mysql:8.4
@@ -173,6 +188,40 @@ services:
     ports:
       - "8006:8000"
     depends_on:
+      - notification-db
+
+  # Kafka Consumers
+  order-consumer:
+    <<: *laravel-service
+    container_name: orderhub-order-consumer
+    volumes:
+      - ./order-service:/app
+      - ./auth-service/storage/keys:/app/storage/keys:ro
+    command: php artisan kafka:consume-payment
+    depends_on:
+      - kafka
+      - order-db
+
+  payment-consumer:
+    <<: *laravel-service
+    container_name: orderhub-payment-consumer
+    volumes:
+      - ./payment-service:/app
+      - ./auth-service/storage/keys:/app/storage/keys:ro
+    command: php artisan kafka:consume-order
+    depends_on:
+      - kafka
+      - payment-db
+
+  notification-consumer:
+    <<: *laravel-service
+    container_name: orderhub-notification-consumer
+    volumes:
+      - ./notification-service:/app
+      - ./auth-service/storage/keys:/app/storage/keys:ro
+    command: php artisan kafka:consume-payment-approved
+    depends_on:
+      - kafka
       - notification-db
 
   # API Gateway + Frontend SPA

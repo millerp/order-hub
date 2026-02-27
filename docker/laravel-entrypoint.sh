@@ -38,8 +38,14 @@ else
     echo "Kafka configuration already exists at config/kafka.php"
 fi
 
-# Use OCTANE_SERVER from environment or default to roadrunner
+# Use OCTANE_SERVER from environment or default to frankenphp
 OCTANE_SERVER=${OCTANE_SERVER:-frankenphp}
+
+# Check if a specific command was provided as argument
+if [ $# -gt 0 ]; then
+    echo "Running custom command: $*"
+    exec "$@"
+fi
 
 echo "Starting Laravel Octane with $OCTANE_SERVER..."
 # Ensure RoadRunner binary is executable if using roadrunner
