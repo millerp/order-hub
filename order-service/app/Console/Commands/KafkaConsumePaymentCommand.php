@@ -20,19 +20,34 @@ class KafkaConsumePaymentCommand extends Command
         $consumer = Kafka::consumer(['payment.approved', 'payment.failed'], 'order-service-group')
             ->withHandler(function (ConsumerMessage $message) {
                 $payload = $message->getBody();
-                $order = Order::find($payload['order_id']);
+                if (! isset($payload['order_id'], $payload['event_id'])) {
+                    $this->warn('Skipping payment event with invalid payload.');
 
-                if ($order) {
-                    $topic = $message->getTopicName();
-                    if ($topic === 'payment.approved') {
-                        $order->status = 'paid';
-                        $this->info("Order {$order->id} marked as paid.");
-                    } else {
-                        $order->status = 'cancelled';
-                        $this->info("Order {$order->id} marked as cancelled.");
-                    }
-                    $order->save();
+                    return;
                 }
+
+                $order = Order::find($payload['order_id']);
+                if (! $order) {
+                    $this->warn("Order {$payload['order_id']} not found for payment event {$payload['event_id']}.");
+
+                    return;
+                }
+
+                if (in_array($order->status, ['paid', 'cancelled'], true)) {
+                    $this->info("Order {$order->id} already finalized as {$order->status}. Skipping duplicate event.");
+
+                    return;
+                }
+
+                $topic = $message->getTopicName();
+                if ($topic === 'payment.approved') {
+                    $order->status = 'paid';
+                    $this->info("Order {$order->id} marked as paid.");
+                } else {
+                    $order->status = 'cancelled';
+                    $this->info("Order {$order->id} marked as cancelled.");
+                }
+                $order->save();
             })
             ->build();
 

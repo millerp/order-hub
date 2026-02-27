@@ -15,14 +15,17 @@ class NotificationStatusTest extends TestCase
         $notification = Notification::create([
             'payment_id' => 123,
             'order_id' => 456,
+            'event_id' => 'd11d5532-8288-4fcb-a5a7-a496f992f4e5',
+            'occurred_at' => now(),
             'type' => 'email',
-            'status' => 'sent'
+            'status' => 'sent',
         ]);
 
         $this->assertDatabaseHas('notifications', [
             'payment_id' => 123,
             'order_id' => 456,
-            'status' => 'sent'
+            'event_id' => 'd11d5532-8288-4fcb-a5a7-a496f992f4e5',
+            'status' => 'sent',
         ]);
     }
 }
