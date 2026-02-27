@@ -7,7 +7,9 @@ use App\Http\Requests\ReserveProductRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Gate;
 
 class ProductController extends Controller
 {
@@ -31,6 +33,7 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request)
     {
+        Gate::authorize('create', Product::class);
         $product = $this->productService->create($request->validated());
 
         return response()->json(new ProductResource($product), 201);
@@ -38,6 +41,7 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, $id)
     {
+        Gate::authorize('update', Product::class);
         $product = $this->productService->update((int) $id, $request->validated());
 
         return new ProductResource($product);

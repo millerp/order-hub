@@ -61,8 +61,11 @@ The hook will:
 ## Laravel Octane (FrankenPHP)
 All Laravel API services run with **Laravel Octane** and **FrankenPHP** for high performance: the application stays in memory between requests. Each service is served on port `8000` inside its container.
 
-The Docker image includes FrankenPHP; the container runs:
-`php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000`.
+The Docker image includes FrankenPHP; the container runs Octane with file watching enabled by default in development:
+`php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --watch`.
+
+You can disable auto-reload per service with:
+`OCTANE_WATCH=false` in the service `.env`.
 
 ## Setup Instructions
 
@@ -126,7 +129,7 @@ The script will:
    docker exec orderhub-kafka /opt/kafka/bin/kafka-topics.sh --create --topic payment.failed.dlq --bootstrap-server localhost:9092
    ```
 7. Done! Endpoints are mapped to ports `8001-8006`.
-   - Kafka Consumers run automatically in dedicated containers: `order-consumer`, `payment-consumer`, `notification-consumer`.
+   - Kafka workers run automatically in dedicated containers: `order-consumer`, `order-outbox-publisher`, `payment-consumer`, `notification-consumer`.
    - Kafka-UI is available at `http://localhost:8080`.
 
 ## Kafka Topic Design

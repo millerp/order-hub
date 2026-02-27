@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Payment;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Facades\Kafka;
 use Junges\Kafka\Message\Message;
@@ -37,7 +38,7 @@ class KafkaConsumeOrderCommand extends Command
 
                     $status = (rand(1, 100) <= 80) ? 'approved' : 'failed';
 
-                    Payment::create([
+                    $payment = Payment::create([
                         'order_id' => $orderId,
                         'amount' => $amount,
                         'status' => $status,
@@ -49,8 +50,10 @@ class KafkaConsumeOrderCommand extends Command
                         ->withMessage(new Message(
                             body: [
                                 'order_id' => $orderId,
-                                'payment_id' => uniqid(),
+                                'payment_id' => (string) $payment->id,
                                 'status' => $status,
+                                'event_id' => (string) Str::uuid(),
+                                'occurred_at' => now()->toIso8601String(),
                             ]
                         ))
                         ->send();

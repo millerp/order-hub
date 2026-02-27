@@ -202,6 +202,17 @@ services:
       - kafka
       - order-db
 
+  order-outbox-publisher:
+    <<: *laravel-service
+    container_name: orderhub-order-outbox-publisher
+    volumes:
+      - ./order-service:/app
+      - ./auth-service/storage/keys:/app/storage/keys:ro
+    command: php artisan kafka:publish-outbox
+    depends_on:
+      - kafka
+      - order-db
+
   payment-consumer:
     <<: *laravel-service
     container_name: orderhub-payment-consumer
