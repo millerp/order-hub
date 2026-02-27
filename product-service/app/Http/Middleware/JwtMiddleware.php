@@ -7,6 +7,7 @@ use Closure;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class JwtMiddleware
@@ -33,6 +34,7 @@ class JwtMiddleware
             $request->setUserResolver(function () use ($user) {
                 return $user;
             });
+            Auth::setUser($user);
 
         } catch (\Firebase\JWT\ExpiredException $e) {
             return response()->json(['success' => false, 'message' => 'Token expired'], 401);
