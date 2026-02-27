@@ -39,7 +39,19 @@ else
 fi
 
 # Use OCTANE_SERVER from environment or default to frankenphp
-OCTANE_SERVER=${OCTANE_SERVER:-frankenphp}
+read_from_dotenv() {
+    key="$1"
+    if [ ! -f ".env" ]; then
+        return
+    fi
+    grep -E "^${key}=" .env | tail -n 1 | cut -d'=' -f2- | tr -d '"'
+}
+
+OCTANE_SERVER_ENV=$(read_from_dotenv "OCTANE_SERVER")
+OCTANE_WATCH_ENV=$(read_from_dotenv "OCTANE_WATCH")
+
+OCTANE_SERVER=${OCTANE_SERVER:-${OCTANE_SERVER_ENV:-frankenphp}}
+OCTANE_WATCH=${OCTANE_WATCH:-${OCTANE_WATCH_ENV:-true}}
 
 # Check if a specific command was provided as argument
 if [ $# -gt 0 ]; then
@@ -51,4 +63,13 @@ echo "Starting Laravel Octane with $OCTANE_SERVER..."
 # Ensure RoadRunner binary is executable if using roadrunner
 if [ "$OCTANE_SERVER" = "roadrunner" ] && [ -f "rr" ]; then chmod +x rr; fi
 
-exec php artisan octane:start --server="$OCTANE_SERVER" --host=0.0.0.0 --port=8000
+case "$(echo "$OCTANE_WATCH" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)
+        echo "Octane file watch enabled."
+        exec php artisan octane:start --server="$OCTANE_SERVER" --host=0.0.0.0 --port=8000 --watch
+        ;;
+    *)
+        echo "Octane file watch disabled."
+        exec php artisan octane:start --server="$OCTANE_SERVER" --host=0.0.0.0 --port=8000
+        ;;
+esac

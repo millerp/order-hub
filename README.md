@@ -61,8 +61,11 @@ The hook will:
 ## Laravel Octane (FrankenPHP)
 All Laravel API services run with **Laravel Octane** and **FrankenPHP** for high performance: the application stays in memory between requests. Each service is served on port `8000` inside its container.
 
-The Docker image includes FrankenPHP; the container runs:
-`php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000`.
+The Docker image includes FrankenPHP; the container runs Octane with file watching enabled by default in development:
+`php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --watch`.
+
+You can disable auto-reload per service with:
+`OCTANE_WATCH=false` in the service `.env`.
 
 ## Setup Instructions
 
