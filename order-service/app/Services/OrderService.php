@@ -23,11 +23,11 @@ class OrderService implements OrderServiceInterface
         return $this->orderRepository->getByUserId($userId);
     }
 
-    public function createOrder(array $data, string $bearerToken): Order
+    public function createOrder(array $data, ?string $bearerToken = null): Order
     {
         $productResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data) {
             return Http::productService()
-                ->withToken($bearerToken)
+                ->withToken($bearerToken ?? '')
                 ->get("/products/{$data['product_id']}");
         });
 
@@ -43,7 +43,7 @@ class OrderService implements OrderServiceInterface
 
         $reserveResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data) {
             return Http::productService()
-                ->withToken($bearerToken)
+                ->withToken($bearerToken ?? '')
                 ->post("/products/{$data['product_id']}/reserve", [
                     'quantity' => $data['quantity'],
                 ]);

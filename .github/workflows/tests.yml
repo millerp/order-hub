@@ -44,6 +44,11 @@ jobs:
         run: |
           cp .env.testing.example .env
           php artisan key:generate
+          if [ "${{ matrix.service }}" == "auth-service" ]; then
+            mkdir -p storage/keys
+            openssl genrsa -out storage/keys/oauth-private.key 2048
+            openssl rsa -in storage/keys/oauth-private.key -pubout -out storage/keys/oauth-public.key
+          fi
 
       - name: Run Tests
         working-directory: ${{ matrix.service }}
