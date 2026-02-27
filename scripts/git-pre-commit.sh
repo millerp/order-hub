@@ -26,10 +26,17 @@ for SERVICE in $SERVICES; do
     if [ ! -z "$SERVICE_FILES" ]; then
         echo "Checking $SERVICE in container..."
         
-        # Run Pint inside a temporary container for the service
-        # Using 'docker compose run --rm' to destroy the container after execution
-        # We pass the list of files to Pint
-        docker compose run --rm "$SERVICE" ./vendor/bin/pint $SERVICE_FILES
+        # Run Pint inside the existing service container
+        # This is faster than 'run --rm' and uses the already running environment
+        CONTAINER_NAME="orderhub-$SERVICE"
+        
+        # Check if container is running
+        if [ "$(docker inspect -f '{{.State.Running}}' $CONTAINER_NAME 2>/dev/null)" = "true" ]; then
+            docker exec -T "$CONTAINER_NAME" ./vendor/bin/pint $SERVICE_FILES
+        else
+            echo "Warning: Container $CONTAINER_NAME is not running. Using 'docker compose run' instead..."
+            docker compose run --rm -T "$SERVICE" ./vendor/bin/pint $SERVICE_FILES
+        fi
         
         # Re-stage modified files
         for FILE in $SERVICE_FILES; do

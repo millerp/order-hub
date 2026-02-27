@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class TestPint extends Model
 {
-    public function   testMethod(){
+    public function testMethod()
+    {
         $a = 1;
-          $b = 2;
-        return $a+$b;
+        $b = 22;
+
+        return $a + $b;
     }
 }
