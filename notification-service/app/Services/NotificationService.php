@@ -11,8 +11,7 @@ class NotificationService implements NotificationServiceInterface
 {
     public function __construct(
         private NotificationRepositoryInterface $notificationRepository
-    ) {
-    }
+    ) {}
 
     public function createForPayment(int $paymentId, int $orderId, string $type): Notification
     {
@@ -30,6 +29,7 @@ class NotificationService implements NotificationServiceInterface
         if (! $notification) {
             throw (new ModelNotFoundException)->setModel(Notification::class, $id);
         }
+
         return $notification;
     }
 
@@ -41,6 +41,7 @@ class NotificationService implements NotificationServiceInterface
     public function updateStatus(int $id, string $status): Notification
     {
         $notification = $this->getById($id);
+
         return $this->notificationRepository->update($notification, ['status' => $status]);
     }
 }

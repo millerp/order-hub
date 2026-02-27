@@ -24,7 +24,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'string',
             'email' => 'email|unique:users,email,'.$this->route('id'),
-            'role' => 'in:admin,customer'
+            'role' => 'in:admin,customer',
         ];
     }
 }

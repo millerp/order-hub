@@ -25,6 +25,7 @@ class NotificationRepository implements NotificationRepositoryInterface
     public function update(Notification $notification, array $data): Notification
     {
         $notification->update($data);
+
         return $notification->fresh();
     }
 }

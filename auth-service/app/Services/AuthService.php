@@ -5,16 +5,15 @@ namespace App\Services;
 use App\Contracts\AuthServiceInterface;
 use App\Contracts\UserRepositoryInterface;
 use App\Models\User;
+use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Firebase\JWT\JWT;
 
 class AuthService implements AuthServiceInterface
 {
     public function __construct(
         private UserRepositoryInterface $userRepository
-    ) {
-    }
+    ) {}
 
     public function register(array $data): array
     {
@@ -53,6 +52,7 @@ class AuthService implements AuthServiceInterface
         if (! $user) {
             throw new \RuntimeException('User not found');
         }
+
         return $this->generateToken($user);
     }
 

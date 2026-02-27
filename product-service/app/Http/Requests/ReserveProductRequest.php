@@ -22,7 +22,7 @@ class ReserveProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'quantity' => 'required|integer|min:1'
+            'quantity' => 'required|integer|min:1',
         ];
     }
 }

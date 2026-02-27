@@ -3,40 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\ProductServiceInterface;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Http\Requests\ReserveProductRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
-use App\Http\Requests\ReserveProductRequest;
 use App\Http\Resources\ProductResource;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ProductController extends Controller
 {
     public function __construct(
         private ProductServiceInterface $productService
-    ) {
-    }
+    ) {}
 
     public function index()
     {
         $products = $this->productService->getAll();
+
         return ProductResource::collection($products);
     }
 
     public function show($id)
     {
         $product = $this->productService->getById((int) $id);
+
         return new ProductResource($product);
     }
 
     public function store(StoreProductRequest $request)
     {
         $product = $this->productService->create($request->validated());
+
         return response()->json(new ProductResource($product), 201);
     }
 
     public function update(UpdateProductRequest $request, $id)
     {
         $product = $this->productService->update((int) $id, $request->validated());
+
         return new ProductResource($product);
     }
 

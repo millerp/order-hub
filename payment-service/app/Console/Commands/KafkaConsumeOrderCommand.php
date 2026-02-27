@@ -2,20 +2,21 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Payment;
-use Junges\Kafka\Facades\Kafka;
+use Illuminate\Console\Command;
 use Junges\Kafka\Contracts\ConsumerMessage;
+use Junges\Kafka\Facades\Kafka;
 use Junges\Kafka\Message\Message;
 
 class KafkaConsumeOrderCommand extends Command
 {
     protected $signature = 'kafka:consume-order';
+
     protected $description = 'Consume order events for payment processing';
 
     public function handle()
     {
-        $this->info("Listening for order.created events...");
+        $this->info('Listening for order.created events...');
 
         $consumer = Kafka::consumer(['order.created'], 'payment-service-group')
             ->withHandler(function (ConsumerMessage $message) {
@@ -25,12 +26,13 @@ class KafkaConsumeOrderCommand extends Command
 
                 if (Payment::where('order_id', $orderId)->exists()) {
                     $this->info("Order $orderId already processed. Skipping.");
+
                     return;
                 }
 
                 try {
                     if (rand(1, 100) <= 10) {
-                        throw new \Exception("Simulated technical failure");
+                        throw new \Exception('Simulated technical failure');
                     }
 
                     $status = (rand(1, 100) <= 80) ? 'approved' : 'failed';
@@ -38,7 +40,7 @@ class KafkaConsumeOrderCommand extends Command
                     Payment::create([
                         'order_id' => $orderId,
                         'amount' => $amount,
-                        'status' => $status
+                        'status' => $status,
                     ]);
 
                     $topicName = $status === 'approved' ? 'payment.approved' : 'payment.failed';
@@ -48,7 +50,7 @@ class KafkaConsumeOrderCommand extends Command
                             body: [
                                 'order_id' => $orderId,
                                 'payment_id' => uniqid(),
-                                'status' => $status
+                                'status' => $status,
                             ]
                         ))
                         ->send();
@@ -56,13 +58,13 @@ class KafkaConsumeOrderCommand extends Command
                     $this->info("Processed payment for Order $orderId: $status");
 
                 } catch (\Exception $e) {
-                    $this->error("Error processing order $orderId: " . $e->getMessage());
+                    $this->error("Error processing order $orderId: ".$e->getMessage());
 
                     Kafka::publish()->onTopic('payment.failed.dlq')
                         ->withMessage(new Message(
                             body: [
                                 'original_message' => $payload,
-                                'error' => $e->getMessage()
+                                'error' => $e->getMessage(),
                             ]
                         ))
                         ->send();

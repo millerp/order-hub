@@ -7,8 +7,8 @@ use App\Contracts\OrderServiceInterface;
 use App\Repositories\OrderRepository;
 use App\Services\CircuitBreaker;
 use App\Services\OrderService;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {

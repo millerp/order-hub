@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Contracts\ProductRepositoryInterface;
 use App\Contracts\ProductServiceInterface;
 use App\Models\Product;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -16,8 +16,7 @@ class ProductService implements ProductServiceInterface
 
     public function __construct(
         private ProductRepositoryInterface $productRepository
-    ) {
-    }
+    ) {}
 
     public function getAll(): Collection
     {
@@ -34,6 +33,7 @@ class ProductService implements ProductServiceInterface
         if (! $product) {
             throw (new ModelNotFoundException)->setModel(Product::class, $id);
         }
+
         return $product;
     }
 
@@ -41,6 +41,7 @@ class ProductService implements ProductServiceInterface
     {
         $product = $this->productRepository->create($data);
         $this->clearProductCache($product->id);
+
         return $product;
     }
 
@@ -49,6 +50,7 @@ class ProductService implements ProductServiceInterface
         $product = $this->getById($id);
         $product = $this->productRepository->update($product, $data);
         $this->clearProductCache($id);
+
         return $product;
     }
 
@@ -65,6 +67,7 @@ class ProductService implements ProductServiceInterface
 
             if ($product->stock < $quantity) {
                 DB::rollBack();
+
                 return ['success' => false, 'message' => 'Insufficient stock'];
             }
 

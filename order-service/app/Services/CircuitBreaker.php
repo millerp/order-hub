@@ -7,11 +7,15 @@ use Illuminate\Support\Facades\Redis;
 class CircuitBreaker
 {
     public const STATE_CLOSED = 'closed';
+
     public const STATE_OPEN = 'open';
+
     public const STATE_HALF_OPEN = 'half_open';
 
     private string $keyPrefix = 'circuit_breaker:product_service';
+
     private int $threshold;
+
     private int $timeoutSeconds;
 
     public function __construct(?int $threshold = null, ?int $timeoutSeconds = null)
@@ -24,7 +28,7 @@ class CircuitBreaker
      * Execute the callable through the circuit breaker.
      * Returns the callable result, or throws / returns 503 response when circuit is OPEN.
      *
-     * @param callable $callable Function that performs the HTTP call and returns the response
+     * @param  callable  $callable  Function that performs the HTTP call and returns the response
      * @return mixed Response from callable, or 503 JSON response when circuit is open
      */
     public function call(callable $callable)
@@ -50,11 +54,13 @@ class CircuitBreaker
                     $this->setState(self::STATE_OPEN);
                     $this->setOpenedAt(time());
                 }
+
                 return $result;
             } catch (\Throwable $e) {
                 $this->recordFailure();
                 $this->setState(self::STATE_OPEN);
                 $this->setOpenedAt(time());
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Service temporarily unavailable',
@@ -70,24 +76,27 @@ class CircuitBreaker
                 $this->resetFailureCount();
             } else {
                 $this->recordFailure();
-                $failures = (int) Redis::get($this->keyPrefix . ':failures') ?: 0;
+                $failures = (int) Redis::get($this->keyPrefix.':failures') ?: 0;
                 if ($failures >= $this->threshold) {
                     $this->setState(self::STATE_OPEN);
                     $this->setOpenedAt(time());
+
                     return response()->json([
                         'success' => false,
                         'message' => 'Service temporarily unavailable',
                     ], 503);
                 }
             }
+
             return $result;
         } catch (\Throwable $e) {
             $this->recordFailure();
-            $failures = (int) Redis::get($this->keyPrefix . ':failures') ?: 0;
+            $failures = (int) Redis::get($this->keyPrefix.':failures') ?: 0;
             if ($failures >= $this->threshold) {
                 $this->setState(self::STATE_OPEN);
                 $this->setOpenedAt(time());
             }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Service temporarily unavailable',
@@ -97,23 +106,25 @@ class CircuitBreaker
 
     private function getState(): string
     {
-        $state = Redis::get($this->keyPrefix . ':state');
+        $state = Redis::get($this->keyPrefix.':state');
         if ($state === null) {
             return self::STATE_CLOSED;
         }
         if ($state === self::STATE_OPEN) {
-            $openedAt = (int) Redis::get($this->keyPrefix . ':opened_at');
+            $openedAt = (int) Redis::get($this->keyPrefix.':opened_at');
             if ($openedAt && (time() - $openedAt) >= $this->timeoutSeconds) {
                 $this->setState(self::STATE_HALF_OPEN);
+
                 return self::STATE_HALF_OPEN;
             }
         }
+
         return $state;
     }
 
     private function setState(string $state): void
     {
-        Redis::set($this->keyPrefix . ':state', $state);
+        Redis::set($this->keyPrefix.':state', $state);
         if ($state === self::STATE_CLOSED) {
             $this->resetFailureCount();
         }
@@ -121,12 +132,12 @@ class CircuitBreaker
 
     private function setOpenedAt(int $timestamp): void
     {
-        Redis::set($this->keyPrefix . ':opened_at', (string) $timestamp);
+        Redis::set($this->keyPrefix.':opened_at', (string) $timestamp);
     }
 
     private function recordFailure(): void
     {
-        Redis::incr($this->keyPrefix . ':failures');
+        Redis::incr($this->keyPrefix.':failures');
     }
 
     private function recordSuccess(): void
@@ -136,7 +147,7 @@ class CircuitBreaker
 
     private function resetFailureCount(): void
     {
-        Redis::set($this->keyPrefix . ':failures', '0');
+        Redis::set($this->keyPrefix.':failures', '0');
     }
 
     private function isSuccess($response): bool
@@ -150,6 +161,7 @@ class CircuitBreaker
         if (method_exists($response, 'getStatusCode')) {
             return $response->getStatusCode() < 500;
         }
+
         return true;
     }
 }

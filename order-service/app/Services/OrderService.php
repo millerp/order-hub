@@ -7,17 +7,16 @@ use App\Contracts\OrderServiceInterface;
 use App\Models\Order;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Junges\Kafka\Facades\Kafka;
 use Junges\Kafka\Message\Message;
-use Illuminate\Support\Facades\Log;
 
 class OrderService implements OrderServiceInterface
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
         private CircuitBreaker $circuitBreaker
-    ) {
-    }
+    ) {}
 
     public function getOrdersByUser(string $userId): Collection
     {
@@ -55,7 +54,7 @@ class OrderService implements OrderServiceInterface
         }
         if ($reserveResponse->failed()) {
             $err = $reserveResponse->json();
-            throw new \RuntimeException('Failed to reserve stock: ' . json_encode($err), 400);
+            throw new \RuntimeException('Failed to reserve stock: '.json_encode($err), 400);
         }
 
         $order = $this->orderRepository->create([
@@ -89,7 +88,7 @@ class OrderService implements OrderServiceInterface
                 ->withMessage($message)
                 ->send();
         } catch (\Exception $e) {
-            Log::error('Kafka Publish Failed: ' . $e->getMessage());
+            Log::error('Kafka Publish Failed: '.$e->getMessage());
         }
     }
 }

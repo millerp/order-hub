@@ -31,6 +31,7 @@ class ProductRepository implements ProductRepositoryInterface
     public function update(Product $product, array $data): Product
     {
         $product->update($data);
+
         return $product->fresh();
     }
 
@@ -38,6 +39,7 @@ class ProductRepository implements ProductRepositoryInterface
     {
         $product->stock -= $quantity;
         $product->save();
+
         return $product->fresh();
     }
 }

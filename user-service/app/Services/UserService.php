@@ -5,15 +5,14 @@ namespace App\Services;
 use App\Contracts\UserRepositoryInterface;
 use App\Contracts\UserServiceInterface;
 use App\Models\User;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserService implements UserServiceInterface
 {
     public function __construct(
         private UserRepositoryInterface $userRepository
-    ) {
-    }
+    ) {}
 
     public function getAll(): Collection
     {
@@ -26,6 +25,7 @@ class UserService implements UserServiceInterface
         if (! $user) {
             throw (new ModelNotFoundException)->setModel(User::class, $id);
         }
+
         return $user;
     }
 
@@ -37,6 +37,7 @@ class UserService implements UserServiceInterface
     public function update(int $id, array $data): User
     {
         $user = $this->getById($id);
+
         return $this->userRepository->update($user, $data);
     }
 

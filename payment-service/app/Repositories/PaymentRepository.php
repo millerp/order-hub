@@ -25,6 +25,7 @@ class PaymentRepository implements PaymentRepositoryInterface
     public function update(Payment $payment, array $data): Payment
     {
         $payment->update($data);
+
         return $payment->fresh();
     }
 }

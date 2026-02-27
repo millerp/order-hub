@@ -2,19 +2,20 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Order;
-use Junges\Kafka\Facades\Kafka;
+use Illuminate\Console\Command;
 use Junges\Kafka\Contracts\ConsumerMessage;
+use Junges\Kafka\Facades\Kafka;
 
 class KafkaConsumePaymentCommand extends Command
 {
     protected $signature = 'kafka:consume-payment';
+
     protected $description = 'Consume payment events to update order status';
 
-    public function handle()
+    public function handle(): void
     {
-        $this->info("Listening for payment events...");
+        $this->info('Listening for payment events...');
 
         $consumer = Kafka::consumer(['payment.approved', 'payment.failed'], 'order-service-group')
             ->withHandler(function (ConsumerMessage $message) {

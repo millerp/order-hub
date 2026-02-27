@@ -18,6 +18,6 @@ class Order extends Model
         'total_amount' => 'float',
         'quantity' => 'integer',
         'user_id' => 'integer',
-        'product_id' => 'integer'
+        'product_id' => 'integer',
     ];
 }

@@ -11,8 +11,7 @@ class PaymentService implements PaymentServiceInterface
 {
     public function __construct(
         private PaymentRepositoryInterface $paymentRepository
-    ) {
-    }
+    ) {}
 
     public function createForOrder(int $orderId, float $amount): Payment
     {
@@ -30,6 +29,7 @@ class PaymentService implements PaymentServiceInterface
         if (! $payment) {
             throw (new ModelNotFoundException)->setModel(Payment::class, $id);
         }
+
         return $payment;
     }
 
@@ -41,6 +41,7 @@ class PaymentService implements PaymentServiceInterface
     public function updateStatus(int $id, string $status): Payment
     {
         $payment = $this->getById($id);
+
         return $this->paymentRepository->update($payment, ['status' => $status]);
     }
 }
