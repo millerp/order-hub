@@ -45,9 +45,11 @@ jobs:
         working-directory: ${{ matrix.service }}
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-reqs
 
-      - name: Generate App Key
+      - name: Prepare Environment
         working-directory: ${{ matrix.service }}
-        run: php artisan key:generate
+        run: |
+          cp .env.example .env
+          php artisan key:generate
 
       - name: Run Tests
         working-directory: ${{ matrix.service }}
