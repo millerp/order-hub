@@ -21,14 +21,8 @@ composer install --no-interaction --ignore-platform-reqs
 echo "Running database migrations..."
 php artisan migrate --no-interaction
 
-# Initialize Telescope if requested and not yet installed
-echo "Installing Laravel Telescope..."
-php artisan telescope:install
-# Re-run migrations to include telescope tables
-php artisan migrate --no-interaction
-
 # Use OCTANE_SERVER from environment or default to roadrunner
-OCTANE_SERVER=${OCTANE_SERVER:-roadrunner}
+OCTANE_SERVER=${OCTANE_SERVER:-frankenphp}
 
 echo "Starting Laravel Octane with $OCTANE_SERVER..."
 # Ensure RoadRunner binary is executable if using roadrunner

@@ -1,6 +1,6 @@
 <?php
 
-use Laravel\Octane\Events\OperationTerminated;
+use Laravel\Octane\Events\OperationTerminate;
 use Laravel\Octane\Events\RequestHandled;
 use Laravel\Octane\Events\RequestReceived;
 use Laravel\Octane\Events\RequestTerminated;
