@@ -64,4 +64,12 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_refresh_requires_bearer_token()
+    {
+        $response = $this->postJson('/api/v1/refresh');
+
+        $response->assertStatus(401)
+            ->assertJsonPath('message', 'Token required');
+    }
 }
