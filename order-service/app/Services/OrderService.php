@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Contracts\OrderRepositoryInterface;
 use App\Contracts\OrderServiceInterface;
 use App\Models\Order;
-use App\Services\CircuitBreaker;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
 use Junges\Kafka\Facades\Kafka;

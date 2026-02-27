@@ -30,6 +30,14 @@ RUN groupadd -g ${GROUP_ID} www-data-group || true && \
     useradd -u ${USER_ID} -m -g www-data-group www-user || \
     useradd -u ${USER_ID} -m www-user || true
 
+# FrankenPHP/Caddy needs home and config directories for the user
+RUN mkdir -p /home/www-user/.config/caddy /home/www-user/.local/share/caddy \
+    && chown -R www-user:www-data-group /home/www-user
+
+# Set Caddy environment variables to use the created directories
+ENV XDG_CONFIG_HOME=/home/www-user/.config
+ENV XDG_DATA_HOME=/home/www-user/.local/share
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

@@ -23,11 +23,19 @@ php artisan migrate --no-interaction
 
 # Check if kafka config needs to be published
 if [ ! -f "config/kafka.php" ]; then
-    echo "Publishing Kafka configuration..."
-    php artisan vendor:publish --provider="Junges\Kafka\LaravelKafkaServiceProvider"
+    echo "Config file config/kafka.php not found. Publishing Kafka configuration..."
+    # Using the correct provider class for mateusjunges/laravel-kafka
+    php artisan vendor:publish --provider="Junges\Kafka\Providers\LaravelKafkaServiceProvider" --no-interaction
     
-    # Update broker list to use environment variable
-    sed -i "s/'brokers' => env('KAFKA_BROKERS', 'localhost:9092'),/'brokers' => env('KAFKA_BROKERS', 'kafka:9092'),/g" config/kafka.php
+    # Update broker list to use environment variable if config was published
+    if [ -f "config/kafka.php" ]; then
+        echo "Updating brokers in config/kafka.php..."
+        sed -i "s/'brokers' => env('KAFKA_BROKERS', 'localhost:9092'),/'brokers' => env('KAFKA_BROKERS', 'kafka:9092'),/g" config/kafka.php
+    else
+        echo "Warning: config/kafka.php was not published correctly."
+    fi
+else
+    echo "Kafka configuration already exists at config/kafka.php"
 fi
 
 # Use OCTANE_SERVER from environment or default to roadrunner
