@@ -59,6 +59,24 @@ class ProductControllerTest extends TestCase
         $this->assertDatabaseHas('products', ['name' => 'New Product']);
     }
 
+    public function test_non_admin_cannot_create_product()
+    {
+        $user = new \App\Models\DummyUser;
+        $user->id = 2;
+        $user->role = 'customer';
+        $this->actingAs($user);
+
+        $response = $this->postJson('/api/v1/products', [
+            'name' => 'Blocked Product',
+            'description' => 'Description',
+            'price' => 49.99,
+            'stock' => 5,
+        ]);
+
+        $response->assertStatus(403);
+        $this->assertDatabaseMissing('products', ['name' => 'Blocked Product']);
+    }
+
     public function test_can_reserve_stock()
     {
         $product = Product::factory()->create(['stock' => 10]);
