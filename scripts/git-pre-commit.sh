@@ -24,27 +24,18 @@ for SERVICE in $SERVICES; do
     SERVICE_FILES=$(echo "$STAGED_FILES" | grep "^$SERVICE/" | sed "s|^$SERVICE/||")
 
     if [ ! -z "$SERVICE_FILES" ]; then
-        echo "Checking $SERVICE..."
-        if [ -f "$SERVICE/vendor/bin/pint" ]; then
-            # Run Pint on the files relative to the service root
-            # Using a temporary file to store the list of files to avoid argument length limits
-            # and to handle them correctly within the service context
-            cd "$SERVICE" || continue
-            
-            # Pint accepts a space-separated list of files
-            ./vendor/bin/pint $SERVICE_FILES
-            
-            # Go back to project root
-            cd ..
-            
-            # Re-stage modified files
-            for FILE in $SERVICE_FILES; do
-                git add "$SERVICE/$FILE"
-            done
-            FILES_MODIFIED=1
-        else
-            echo "Warning: Pint not found in $SERVICE/vendor/bin/pint. Skipping."
-        fi
+        echo "Checking $SERVICE in container..."
+        
+        # Run Pint inside a temporary container for the service
+        # Using 'docker compose run --rm' to destroy the container after execution
+        # We pass the list of files to Pint
+        docker compose run --rm "$SERVICE" ./vendor/bin/pint $SERVICE_FILES
+        
+        # Re-stage modified files
+        for FILE in $SERVICE_FILES; do
+            git add "$SERVICE/$FILE"
+        done
+        FILES_MODIFIED=1
     fi
 done
 
