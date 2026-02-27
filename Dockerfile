@@ -1,4 +1,4 @@
-FROM php:8.4-cli
+FROM dunglas/frankenphp:1-php8.4
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -14,18 +14,11 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     build-essential \
     passwd \
+    librdkafka-dev \
     && which git && which zip && which unzip
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql exif pcntl bcmath gd sockets zip && \
-    docker-php-ext-install mbstring || (apt-get install -y libonig-dev && docker-php-ext-install mbstring)
-
-# Install Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
-
-# Install Kafka extension
-RUN apt-get update && apt-get install -y librdkafka-dev && \
-    pecl install rdkafka-6.0.5 && docker-php-ext-enable rdkafka
+# Install PHP extensions using the script provided in frankenphp image
+RUN install-php-extensions pdo_mysql mbstring exif pcntl bcmath gd sockets zip redis rdkafka-6.0.5
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -40,19 +33,13 @@ RUN groupadd -g ${GROUP_ID} www-data-group || true && \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install RoadRunner binary for Laravel Octane
+# Install RoadRunner binary for Laravel Octane (fallback)
 ARG RR_VERSION=2025.1.8
 RUN curl -sSfL -o rr.tar.gz "https://github.com/roadrunner-server/roadrunner/releases/download/v${RR_VERSION}/roadrunner-${RR_VERSION}-linux-amd64.tar.gz" \
     && tar -xzf rr.tar.gz \
     && mv roadrunner-${RR_VERSION}-linux-amd64/rr /usr/local/bin/rr \
     && chmod +x /usr/local/bin/rr \
     && rm -rf rr.tar.gz roadrunner-${RR_VERSION}-linux-amd64
-
-# Install FrankenPHP binary for Laravel Octane
-ARG FRANKENPHP_VERSION=1.11.3
-RUN curl -sSfL -o frankenphp "https://github.com/dunglas/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
-    && chmod +x frankenphp \
-    && mv frankenphp /usr/local/bin/frankenphp
 
 # Copy Laravel entrypoint to install dependencies at container start and then run Octane
 COPY docker/laravel-entrypoint.sh /usr/local/bin/laravel-entrypoint.sh
