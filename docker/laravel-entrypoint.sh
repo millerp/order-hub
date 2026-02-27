@@ -21,6 +21,15 @@ composer install --no-interaction --ignore-platform-reqs
 echo "Running database migrations..."
 php artisan migrate --no-interaction
 
+# Check if kafka config needs to be published
+if [ ! -f "config/kafka.php" ]; then
+    echo "Publishing Kafka configuration..."
+    php artisan vendor:publish --provider="Junges\Kafka\LaravelKafkaServiceProvider"
+    
+    # Update broker list to use environment variable
+    sed -i "s/'brokers' => env('KAFKA_BROKERS', 'localhost:9092'),/'brokers' => env('KAFKA_BROKERS', 'kafka:9092'),/g" config/kafka.php
+fi
+
 # Use OCTANE_SERVER from environment or default to roadrunner
 OCTANE_SERVER=${OCTANE_SERVER:-frankenphp}
 

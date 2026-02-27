@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Services\CircuitBreaker;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
+use Junges\Kafka\Facades\Kafka;
+use Junges\Kafka\Message\Message;
 use Illuminate\Support\Facades\Log;
 
 class OrderService implements OrderServiceInterface
@@ -73,21 +75,20 @@ class OrderService implements OrderServiceInterface
     private function publishOrderCreated(Order $order): void
     {
         try {
-            $conf = new \RdKafka\Conf();
-            $conf->set('metadata.broker.list', env('KAFKA_BROKERS', 'kafka:9092'));
-            $producer = new \RdKafka\Producer($conf);
-            $topic = $producer->newTopic('order.created');
-
-            $payload = json_encode([
+            $payload = [
                 'order_id' => (string) $order->id,
                 'user_id' => (string) $order->user_id,
                 'amount' => (float) $order->total_amount,
                 'status' => 'pending',
-            ]);
+            ];
 
-            $topic->produce(RD_KAFKA_PARTITION_UA, 0, $payload);
-            $producer->poll(0);
-            $producer->flush(10000);
+            $message = new Message(
+                body: $payload,
+            );
+
+            Kafka::publishOn('order.created')
+                ->withMessage($message)
+                ->send();
         } catch (\Exception $e) {
             Log::error('Kafka Publish Failed: ' . $e->getMessage());
         }
