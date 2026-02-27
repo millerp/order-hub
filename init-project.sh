@@ -31,6 +31,9 @@ for service in "${services[@]}"; do
         sed -i "s/REDIS_HOST=127.0.0.1/REDIS_HOST=orderhub-redis/g" "$service/.env"
         sed -i "s/SESSION_DRIVER=database/SESSION_DRIVER=redis/g" "$service/.env"
 
+        # Set FrankenPHP as default Octane server
+        sed -i "s/OCTANE_SERVER=roadrunner/OCTANE_SERVER=frankenphp/g" "$service/.env"
+
         # Enable Telescope
         if ! grep -q "TELESCOPE_ENABLED" "$service/.env"; then
             echo -e "\nTELESCOPE_ENABLED=true" >> "$service/.env"

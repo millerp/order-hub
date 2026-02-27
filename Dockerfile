@@ -44,10 +44,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 ARG RR_VERSION=2025.1.8
 RUN curl -sSfL -o rr.tar.gz "https://github.com/roadrunner-server/roadrunner/releases/download/v${RR_VERSION}/roadrunner-${RR_VERSION}-linux-amd64.tar.gz" \
     && tar -xzf rr.tar.gz \
-    && ls -lah \
     && mv roadrunner-${RR_VERSION}-linux-amd64/rr /usr/local/bin/rr \
     && chmod +x /usr/local/bin/rr \
-    && rm rr.tar.gz
+    && rm -rf rr.tar.gz roadrunner-${RR_VERSION}-linux-amd64
+
+# Install FrankenPHP binary for Laravel Octane
+ARG FRANKENPHP_VERSION=1.4.3
+RUN curl -sSfL -o frankenphp "https://github.com/dunglas/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
+    && chmod +x frankenphp \
+    && mv frankenphp /usr/local/bin/frankenphp
 
 # Copy Laravel entrypoint to install dependencies at container start and then run Octane
 COPY docker/laravel-entrypoint.sh /usr/local/bin/laravel-entrypoint.sh

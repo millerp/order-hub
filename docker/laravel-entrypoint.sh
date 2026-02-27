@@ -27,8 +27,11 @@ php artisan telescope:install
 # Re-run migrations to include telescope tables
 php artisan migrate --no-interaction
 
-echo "Starting Laravel Octane with RoadRunner..."
-# Ensure RoadRunner binary is executable in case it was just installed/copied
-if [ -f "rr" ]; then chmod +x rr; fi
+# Use OCTANE_SERVER from environment or default to roadrunner
+OCTANE_SERVER=${OCTANE_SERVER:-roadrunner}
 
-exec php artisan octane:start --server=roadrunner --host=0.0.0.0 --port=8000
+echo "Starting Laravel Octane with $OCTANE_SERVER..."
+# Ensure RoadRunner binary is executable if using roadrunner
+if [ "$OCTANE_SERVER" = "roadrunner" ] && [ -f "rr" ]; then chmod +x rr; fi
+
+exec php artisan octane:start --server="$OCTANE_SERVER" --host=0.0.0.0 --port=8000
