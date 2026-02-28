@@ -21,6 +21,7 @@ class OrderController extends Controller
             'meta' => [
                 'request_id' => $request->attributes->get('request_id'),
                 'trace_id' => $request->attributes->get('trace_id'),
+                'traceparent' => $request->attributes->get('traceparent'),
             ],
         ]);
     }
@@ -39,6 +40,7 @@ class OrderController extends Controller
                 'meta' => [
                     'request_id' => $request->attributes->get('request_id'),
                     'trace_id' => $traceId,
+                    'traceparent' => $request->attributes->get('traceparent'),
                 ],
             ], 201);
         } catch (\RuntimeException $e) {
@@ -54,6 +56,7 @@ class OrderController extends Controller
                 'meta' => [
                     'request_id' => $request->attributes->get('request_id'),
                     'trace_id' => $traceId,
+                    'traceparent' => $request->attributes->get('traceparent'),
                 ],
             ], $status);
         }
@@ -64,9 +67,10 @@ class OrderController extends Controller
         $userId = (string) $request->user()->id;
         $requestId = (string) $request->attributes->get('request_id');
         $traceId = (string) $request->attributes->get('trace_id');
+        $traceparent = (string) $request->attributes->get('traceparent');
         $maxIterations = max(1, min(20, (int) $request->query('max_iterations', 20)));
 
-        return response()->stream(function () use ($userId, $requestId, $traceId, $maxIterations) {
+        return response()->stream(function () use ($userId, $requestId, $traceId, $traceparent, $maxIterations) {
             $lastHash = null;
 
             for ($i = 0; $i < $maxIterations; $i++) {
@@ -88,6 +92,7 @@ class OrderController extends Controller
                     'meta' => [
                         'request_id' => $requestId,
                         'trace_id' => $traceId,
+                        'traceparent' => $traceparent,
                         'emitted_at' => now()->toIso8601String(),
                     ],
                 ];

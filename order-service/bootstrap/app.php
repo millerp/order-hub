@@ -41,9 +41,11 @@ return Application::configure(basePath: dirname(__DIR__))
                         'meta' => [
                             'request_id' => $request->attributes->get('request_id'),
                             'trace_id' => $request->attributes->get('trace_id'),
+                            'traceparent' => $request->attributes->get('traceparent'),
                         ],
                         'request_id' => $request->attributes->get('request_id'),
                         'trace_id' => $request->attributes->get('trace_id'),
+                        'traceparent' => $request->attributes->get('traceparent'),
                     ], 500);
                 }
 
@@ -58,10 +60,12 @@ return Application::configure(basePath: dirname(__DIR__))
                     'meta' => [
                         'request_id' => $request->attributes->get('request_id'),
                         'trace_id' => $request->attributes->get('trace_id'),
+                        'traceparent' => $request->attributes->get('traceparent'),
                     ],
                     'type' => class_basename($e),
                     'request_id' => $request->attributes->get('request_id'),
                     'trace_id' => $request->attributes->get('trace_id'),
+                    'traceparent' => $request->attributes->get('traceparent'),
                 ], $status);
             }
         });

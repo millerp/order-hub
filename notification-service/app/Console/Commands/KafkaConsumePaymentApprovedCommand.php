@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 use InvalidArgumentException;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Facades\Kafka;
+use OrderHub\Shared\Observability\TraceHeaders;
 
 class KafkaConsumePaymentApprovedCommand extends Command
 {
@@ -30,7 +31,7 @@ class KafkaConsumePaymentApprovedCommand extends Command
 
                     return;
                 }
-                $traceId = (string) ($contract->traceId ?: ($message->getHeaders()['x-trace-id'] ?? ''));
+                $traceId = TraceHeaders::resolveFromPayloadAndHeaders($payload, $message->getHeaders() ?? []);
 
                 $paymentId = $contract->paymentId;
                 $orderId = $contract->orderId;

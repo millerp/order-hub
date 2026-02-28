@@ -18,26 +18,29 @@ class QueuePaymentApprovedNotification
         $occurredAt = $event->payload->occurredAt;
         $traceId = $event->payload->traceId;
 
-        Bus::chain([
-            new ProcessPaymentApprovedNotification(
-                $paymentId,
-                $orderId,
-                $eventId,
-                $occurredAt,
-                $traceId,
-            ),
-            new FinalizeNotificationDelivery(
-                $eventId,
-            ),
-        ])->catch(function (\Throwable $e) use ($paymentId, $orderId, $eventId, $occurredAt, $traceId): void {
-            CompensateNotificationFailure::dispatch(
-                $paymentId,
-                $orderId,
-                $eventId,
-                $occurredAt,
-                $traceId,
-                $e->getMessage(),
-            );
-        })->dispatch();
+        Bus::batch([
+            [
+                new ProcessPaymentApprovedNotification(
+                    $paymentId,
+                    $orderId,
+                    $eventId,
+                    $occurredAt,
+                    $traceId,
+                ),
+                new FinalizeNotificationDelivery(
+                    $eventId,
+                ),
+            ],
+        ])->name("notification-delivery:{$eventId}")
+            ->catch(function (\Throwable $e) use ($paymentId, $orderId, $eventId, $occurredAt, $traceId): void {
+                CompensateNotificationFailure::dispatch(
+                    $paymentId,
+                    $orderId,
+                    $eventId,
+                    $occurredAt,
+                    $traceId,
+                    $e->getMessage(),
+                );
+            })->dispatch();
     }
 }

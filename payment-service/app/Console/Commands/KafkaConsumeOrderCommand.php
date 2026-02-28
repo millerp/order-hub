@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Facades\Kafka;
 use Junges\Kafka\Message\Message;
+use OrderHub\Shared\Observability\TraceHeaders;
 
 class KafkaConsumeOrderCommand extends Command
 {
@@ -24,7 +25,8 @@ class KafkaConsumeOrderCommand extends Command
                 $payload = $message->getBody();
                 $orderId = $payload['order_id'];
                 $amount = $payload['amount'];
-                $traceId = (string) ($payload['trace_id'] ?? ($message->getHeaders()['x-trace-id'] ?? Str::uuid()->toString()));
+                $traceId = TraceHeaders::resolveFromPayloadAndHeaders($payload, $message->getHeaders() ?? []);
+                $traceparent = (string) (($payload['traceparent'] ?? ($message->getHeaders()['traceparent'] ?? '')) ?: TraceHeaders::traceparentFromTraceId($traceId));
 
                 if (Payment::where('order_id', $orderId)->exists()) {
                     $this->info("Order $orderId already processed. Skipping.");
@@ -56,8 +58,10 @@ class KafkaConsumeOrderCommand extends Command
                             'event_id' => (string) Str::uuid(),
                             'occurred_at' => now()->toIso8601String(),
                             'trace_id' => $traceId,
+                            'traceparent' => $traceparent,
                         ]
-                    ))->withHeader('x-trace-id', $traceId);
+                    ))->withHeader('x-trace-id', $traceId)
+                        ->withHeader('traceparent', $traceparent);
 
                     Kafka::publish()->onTopic($topicName)
                         ->withMessage($eventMessage)
@@ -73,8 +77,10 @@ class KafkaConsumeOrderCommand extends Command
                             'original_message' => $payload,
                             'error' => $e->getMessage(),
                             'trace_id' => $traceId,
+                            'traceparent' => $traceparent,
                         ]
-                    ))->withHeader('x-trace-id', $traceId);
+                    ))->withHeader('x-trace-id', $traceId)
+                        ->withHeader('traceparent', $traceparent);
 
                     Kafka::publish()->onTopic('payment.failed.dlq')
                         ->withMessage($dlqMessage)

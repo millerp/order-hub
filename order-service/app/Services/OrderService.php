@@ -7,8 +7,9 @@ use App\Contracts\OrderServiceInterface;
 use App\Models\Order;
 use App\Models\OutboxEvent;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use OrderHub\Shared\Observability\TraceHeaders;
 
 class OrderService implements OrderServiceInterface
 {
@@ -24,11 +25,13 @@ class OrderService implements OrderServiceInterface
 
     public function createOrder(array $data, ?string $bearerToken = null, ?string $traceId = null): Order
     {
-        $productResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data, $traceId) {
+        $traceparent = $traceId ? TraceHeaders::traceparentFromTraceId($traceId) : null;
+        $productResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data, $traceId, $traceparent) {
             return Http::productService()
                 ->withToken($bearerToken ?? '')
                 ->withHeaders([
                     'X-Trace-Id' => $traceId ?? '',
+                    'traceparent' => $traceparent ?? '',
                 ])
                 ->get("/products/{$data['product_id']}");
         });
@@ -43,11 +46,12 @@ class OrderService implements OrderServiceInterface
         $productData = $productResponse->json('data') ?? $productResponse->json();
         $totalAmount = $productData['price'] * $data['quantity'];
 
-        $reserveResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data, $traceId) {
+        $reserveResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data, $traceId, $traceparent) {
             return Http::productService()
                 ->withToken($bearerToken ?? '')
                 ->withHeaders([
                     'X-Trace-Id' => $traceId ?? '',
+                    'traceparent' => $traceparent ?? '',
                 ])
                 ->post("/products/{$data['product_id']}/reserve", [
                     'quantity' => $data['quantity'],
@@ -62,7 +66,7 @@ class OrderService implements OrderServiceInterface
             throw new \RuntimeException('Failed to reserve stock: '.json_encode($err), 400);
         }
 
-        return DB::transaction(function () use ($data, $totalAmount, $traceId) {
+        return DB::transaction(function () use ($data, $totalAmount, $traceId, $traceparent) {
             $order = $this->orderRepository->create([
                 'user_id' => $data['user_id'],
                 'product_id' => $data['product_id'],
@@ -81,6 +85,7 @@ class OrderService implements OrderServiceInterface
                     'amount' => (float) $order->total_amount,
                     'status' => 'pending',
                     'trace_id' => $traceId,
+                    'traceparent' => $traceparent,
                 ],
             ]);
 
