@@ -137,13 +137,17 @@ for topic in "${topics[@]}"; do
     docker exec orderhub-kafka /opt/kafka/bin/kafka-topics.sh --create --topic "$topic" --bootstrap-server localhost:9092 --if-not-exists
 done
 
-# 9. Start Gateway and Frontend
+# 9. Start async workers (Kafka consumers, outbox publisher, and Horizon)
+echo -e "${BLUE}Starting async workers...${NC}"
+docker compose up -d order-consumer order-outbox-publisher payment-consumer notification-consumer notification-horizon
+
+# 10. Start Gateway and Frontend
 echo -e "${BLUE}Starting Gateway and Frontend...${NC}"
 export CURRENT_UID=$(id -u)
 export CURRENT_GID=$(id -g)
 docker compose up -d gateway
 
-# 10. Install Git Hooks
+# 11. Install Git Hooks
 echo -e "${BLUE}Installing Git hooks...${NC}"
 if [ -f "scripts/install-hooks.sh" ]; then
     chmod +x scripts/install-hooks.sh

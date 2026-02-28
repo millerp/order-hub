@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\ProcessPaymentApprovedNotification;
 use App\Models\Notification;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Facades\Kafka;
 
@@ -38,25 +38,8 @@ class KafkaConsumePaymentApprovedCommand extends Command
                     return;
                 }
 
-                try {
-                    // Simulate sending email
-                    Log::info("Sending order confirmation email for Order ID: $orderId");
-                    $this->info("Sending order confirmation email for Order ID: $orderId");
-
-                    Notification::create([
-                        'payment_id' => $paymentId,
-                        'order_id' => $orderId,
-                        'event_id' => $eventId,
-                        'occurred_at' => $occurredAt,
-                        'type' => 'email',
-                        'status' => 'sent',
-                    ]);
-
-                    $this->info("Email sent for Order $orderId");
-
-                } catch (\Exception $e) {
-                    Log::error("Failed to send notification for payment $paymentId: ".$e->getMessage());
-                }
+                ProcessPaymentApprovedNotification::dispatch($paymentId, $orderId, $eventId, $occurredAt);
+                $this->info("Notification job dispatched for Order $orderId");
             })
             ->build();
 

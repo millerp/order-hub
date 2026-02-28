@@ -235,6 +235,17 @@ services:
       - kafka
       - notification-db
 
+  notification-horizon:
+    <<: *laravel-service
+    container_name: orderhub-notification-horizon
+    volumes:
+      - ./notification-service:/app
+      - ./auth-service/storage/keys:/app/storage/keys:ro
+    command: php artisan horizon
+    depends_on:
+      - redis
+      - notification-db
+
   # API Gateway + Frontend SPA
   gateway:
     build:
