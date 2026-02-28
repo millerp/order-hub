@@ -65,6 +65,31 @@ sequenceDiagram
     Order-->>Frontend: Real-time order status updates
 ```
 
+## Screenshots
+<details>
+<summary>Login</summary>
+
+![Login screen](images/login.png)
+</details>
+
+<details>
+<summary>Create Account</summary>
+
+![Create account screen](images/newaccount.png)
+</details>
+
+<details>
+<summary>Product List</summary>
+
+![Product list screen](images/productlist.png)
+</details>
+
+<details>
+<summary>Order List</summary>
+
+![Order list screen](images/orderlist.png)
+</details>
+
 ## Code Quality
 This project uses **Laravel Pint** for code style consistency. A Git pre-commit hook is provided to automatically run Pint on staged PHP files.
 
