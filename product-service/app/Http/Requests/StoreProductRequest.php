@@ -11,7 +11,7 @@ class StoreProductRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return strtolower((string) ($this->user()?->role ?? '')) === 'admin';
+        return true;
     }
 
     /**

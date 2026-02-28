@@ -21,6 +21,14 @@
 - Policy/RBAC consistency:
   - Remove duplicated auth checks from FormRequests and centralize in policies.
 
+### Phase 2 - Current Progress
+- Notification Service:
+  - `payment.approved` Kafka payload is now validated by a dedicated contract object (`PaymentApprovedPayload`).
+  - Domain event (`PaymentApprovedReceived`) and listener (`QueuePaymentApprovedNotification`) were introduced.
+  - Kafka consumer now dispatches domain events instead of directly dispatching queue jobs.
+- Product Service:
+  - Authorization logic duplication removed from product FormRequests; authorization remains centralized in Gate/Policy.
+
 ## Phase 3 (Advanced)
 - Full observability:
   - OpenTelemetry + distributed trace correlation across HTTP and Kafka.
