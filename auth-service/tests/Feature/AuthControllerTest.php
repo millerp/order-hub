@@ -80,7 +80,11 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/v1/refresh');
 
         $response->assertStatus(401)
-            ->assertJsonPath('message', 'Token required');
+            ->assertJsonPath('message', 'Token required')
+            ->assertJsonStructure([
+                'errors',
+                'meta' => ['request_id'],
+            ]);
     }
 
     public function test_auth_responses_include_request_id_header()

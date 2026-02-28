@@ -53,7 +53,15 @@ class AuthController extends Controller
     {
         $token = $request->bearerToken();
         if (! $token) {
-            return response()->json(['message' => 'Token required'], 401);
+            return response()->json([
+                'message' => 'Token required',
+                'errors' => [
+                    ['message' => 'Token required'],
+                ],
+                'meta' => [
+                    'request_id' => $request->attributes->get('request_id'),
+                ],
+            ], 401);
         }
         try {
             $newToken = $this->authService->refreshToken($token);
@@ -73,7 +81,15 @@ class AuthController extends Controller
                 : 'Invalid token';
             $status = $e instanceof \RuntimeException && $e->getMessage() === 'User not found' ? 404 : 401;
 
-            return response()->json(['message' => $message], $status);
+            return response()->json([
+                'message' => $message,
+                'errors' => [
+                    ['message' => $message],
+                ],
+                'meta' => [
+                    'request_id' => $request->attributes->get('request_id'),
+                ],
+            ], $status);
         }
     }
 }

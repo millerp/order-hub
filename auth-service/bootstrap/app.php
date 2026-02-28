@@ -32,15 +32,28 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
                 if ($status >= 500) {
                     return response()->json([
-                        'success' => false,
                         'message' => 'Internal server error',
+                        'errors' => [
+                            ['message' => 'Internal server error'],
+                        ],
+                        'meta' => [
+                            'request_id' => $request->attributes->get('request_id'),
+                        ],
                         'request_id' => $request->attributes->get('request_id'),
                     ], 500);
                 }
 
                 return response()->json([
-                    'success' => false,
                     'message' => $e->getMessage(),
+                    'errors' => [
+                        [
+                            'message' => $e->getMessage(),
+                            'type' => class_basename($e),
+                        ],
+                    ],
+                    'meta' => [
+                        'request_id' => $request->attributes->get('request_id'),
+                    ],
                     'type' => class_basename($e),
                     'request_id' => $request->attributes->get('request_id'),
                 ], $status);
