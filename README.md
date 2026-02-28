@@ -226,7 +226,3 @@ To support loose coupling, Kafka topics act as the primary communication contrac
 - The system mixes synchronous HTTP with asynchronous Kafka to keep ordering/stock guarantees simple; this increases coupling on critical paths.
 - Docker containers run via **Laravel Octane (FrankenPHP)** for high throughput and in-memory request handling per service.
 
-## Future Improvements
-- Add full OpenTelemetry export pipeline (collector + backend + dashboards), beyond current trace context propagation.
-- Version and publish the shared kernel as a private Composer package to decouple service release cycles.
-- Expand contract tests in CI to include cross-service consumer compatibility checks per event version.
