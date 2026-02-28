@@ -48,17 +48,19 @@ class KafkaConsumeOrderCommand extends Command
 
                     $topicName = $status === 'approved' ? 'payment.approved' : 'payment.failed';
                     $this->info("Publishing payment event to topic: $topicName");
+                    $eventMessage = (new Message(
+                        body: [
+                            'order_id' => $orderId,
+                            'payment_id' => (string) $payment->id,
+                            'status' => $status,
+                            'event_id' => (string) Str::uuid(),
+                            'occurred_at' => now()->toIso8601String(),
+                            'trace_id' => $traceId,
+                        ]
+                    ))->withHeader('x-trace-id', $traceId);
+
                     Kafka::publish()->onTopic($topicName)
-                        ->withMessage(new Message(
-                            body: [
-                                'order_id' => $orderId,
-                                'payment_id' => (string) $payment->id,
-                                'status' => $status,
-                                'event_id' => (string) Str::uuid(),
-                                'occurred_at' => now()->toIso8601String(),
-                                'trace_id' => $traceId,
-                            ]
-                        ))->withHeader('x-trace-id', $traceId)
+                        ->withMessage($eventMessage)
                         ->send();
 
                     $this->info("Processed payment for Order $orderId: $status trace_id=$traceId");
@@ -66,14 +68,16 @@ class KafkaConsumeOrderCommand extends Command
                 } catch (\Exception $e) {
                     $this->error("Error processing order $orderId: ".$e->getMessage());
 
+                    $dlqMessage = (new Message(
+                        body: [
+                            'original_message' => $payload,
+                            'error' => $e->getMessage(),
+                            'trace_id' => $traceId,
+                        ]
+                    ))->withHeader('x-trace-id', $traceId);
+
                     Kafka::publish()->onTopic('payment.failed.dlq')
-                        ->withMessage(new Message(
-                            body: [
-                                'original_message' => $payload,
-                                'error' => $e->getMessage(),
-                                'trace_id' => $traceId,
-                            ]
-                        ))->withHeader('x-trace-id', $traceId)
+                        ->withMessage($dlqMessage)
                         ->send();
                 }
             })
