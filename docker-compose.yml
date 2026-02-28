@@ -213,6 +213,16 @@ services:
       - kafka
       - order-db
 
+  order-scheduler:
+    <<: *laravel-service
+    container_name: orderhub-order-scheduler
+    volumes:
+      - ./order-service:/app
+      - ./auth-service/storage/keys:/app/storage/keys:ro
+    command: php artisan schedule:work
+    depends_on:
+      - order-db
+
   payment-consumer:
     <<: *laravel-service
     container_name: orderhub-payment-consumer
@@ -233,6 +243,16 @@ services:
     command: php artisan kafka:consume-payment-approved
     depends_on:
       - kafka
+      - notification-db
+
+  notification-scheduler:
+    <<: *laravel-service
+    container_name: orderhub-notification-scheduler
+    volumes:
+      - ./notification-service:/app
+      - ./auth-service/storage/keys:/app/storage/keys:ro
+    command: php artisan schedule:work
+    depends_on:
       - notification-db
 
   notification-horizon:

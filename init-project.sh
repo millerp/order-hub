@@ -139,7 +139,7 @@ done
 
 # 9. Start async workers (Kafka consumers, outbox publisher, and Horizon)
 echo -e "${BLUE}Starting async workers...${NC}"
-docker compose up -d order-consumer order-outbox-publisher payment-consumer notification-consumer notification-horizon
+docker compose up -d order-consumer order-outbox-publisher order-scheduler payment-consumer notification-consumer notification-scheduler notification-horizon
 
 # 10. Start Gateway and Frontend
 echo -e "${BLUE}Starting Gateway and Frontend...${NC}"
