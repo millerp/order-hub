@@ -140,6 +140,7 @@ services:
     container_name: orderhub-user-service
     volumes:
       - ./user-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8002:8000"
@@ -151,6 +152,7 @@ services:
     container_name: orderhub-product-service
     volumes:
       - ./product-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8003:8000"
@@ -162,6 +164,7 @@ services:
     container_name: orderhub-order-service
     volumes:
       - ./order-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8004:8000"
@@ -173,6 +176,7 @@ services:
     container_name: orderhub-payment-service
     volumes:
       - ./payment-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8005:8000"
@@ -184,6 +188,7 @@ services:
     container_name: orderhub-notification-service
     volumes:
       - ./notification-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8006:8000"
@@ -196,6 +201,7 @@ services:
     container_name: orderhub-order-consumer
     volumes:
       - ./order-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:consume-payment
     depends_on:
@@ -207,6 +213,7 @@ services:
     container_name: orderhub-order-outbox-publisher
     volumes:
       - ./order-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:publish-outbox
     depends_on:
@@ -218,6 +225,7 @@ services:
     container_name: orderhub-order-scheduler
     volumes:
       - ./order-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan schedule:work
     depends_on:
@@ -228,6 +236,7 @@ services:
     container_name: orderhub-payment-consumer
     volumes:
       - ./payment-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:consume-order
     depends_on:
@@ -239,6 +248,7 @@ services:
     container_name: orderhub-notification-consumer
     volumes:
       - ./notification-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:consume-payment-approved
     depends_on:
@@ -250,6 +260,7 @@ services:
     container_name: orderhub-notification-scheduler
     volumes:
       - ./notification-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan schedule:work
     depends_on:
@@ -260,6 +271,7 @@ services:
     container_name: orderhub-notification-horizon
     volumes:
       - ./notification-service:/app
+      - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan horizon
     depends_on:

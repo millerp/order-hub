@@ -4,14 +4,19 @@ namespace App\Http\Middleware;
 
 use App\Models\DummyUser;
 use Closure;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+use Firebase\JWT\ExpiredException;
+use Firebase\JWT\SignatureInvalidException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use OrderHub\Shared\Auth\JwtTokenDecoder;
 use Symfony\Component\HttpFoundation\Response;
 
 class JwtMiddleware
 {
+    public function __construct(
+        private readonly JwtTokenDecoder $jwtTokenDecoder
+    ) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->bearerToken() ?: $request->query('access_token');
@@ -28,20 +33,7 @@ class JwtMiddleware
         }
 
         try {
-            $publicKeyPath = storage_path('keys/oauth-public.key');
-            if (! file_exists($publicKeyPath)) {
-                return response()->json([
-                    'message' => 'Internal server error',
-                    'errors' => [
-                        ['message' => 'Internal server error'],
-                    ],
-                    'meta' => [
-                        'request_id' => $request->attributes->get('request_id'),
-                    ],
-                ], 500);
-            }
-            $publicKey = file_get_contents($publicKeyPath);
-            $decoded = JWT::decode($token, new Key($publicKey, 'RS256'));
+            $decoded = $this->jwtTokenDecoder->decode($token, storage_path('keys/oauth-public.key'));
 
             $user = new DummyUser;
             $user->id = $decoded->sub;
@@ -52,7 +44,7 @@ class JwtMiddleware
             });
             Auth::setUser($user);
 
-        } catch (\Firebase\JWT\ExpiredException $e) {
+        } catch (ExpiredException $e) {
             return response()->json([
                 'message' => 'Token expired',
                 'errors' => [
@@ -62,7 +54,7 @@ class JwtMiddleware
                     'request_id' => $request->attributes->get('request_id'),
                 ],
             ], 401);
-        } catch (\Firebase\JWT\SignatureInvalidException $e) {
+        } catch (SignatureInvalidException $e) {
             return response()->json([
                 'message' => 'Invalid token signature',
                 'errors' => [

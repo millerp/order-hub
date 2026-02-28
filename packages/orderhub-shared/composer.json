@@ -1,0 +1,15 @@
+{
+    "name": "orderhub/shared-kernel",
+    "description": "Shared kernel for auth, event contracts and trace conventions",
+    "type": "library",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "OrderHub\\Shared\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "firebase/php-jwt": "^7.0"
+    }
+}
