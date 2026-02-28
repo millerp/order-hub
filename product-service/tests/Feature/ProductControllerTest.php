@@ -22,7 +22,8 @@ class ProductControllerTest extends TestCase
             ->assertJsonStructure([
                 'data' => [
                     '*' => ['id', 'name', 'description', 'price', 'stock']
-                ]
+                ],
+                'meta' => ['request_id'],
             ]);
     }
 
@@ -34,7 +35,10 @@ class ProductControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('data.id', $product->id)
-            ->assertJsonPath('data.name', $product->name);
+            ->assertJsonPath('data.name', $product->name)
+            ->assertJsonStructure([
+                'meta' => ['request_id'],
+            ]);
     }
 
     public function test_can_create_product()
@@ -54,7 +58,10 @@ class ProductControllerTest extends TestCase
         $response = $this->postJson('/api/v1/products', $productData);
 
         $response->assertStatus(201)
-            ->assertJsonPath('name', 'New Product');
+            ->assertJsonPath('data.name', 'New Product')
+            ->assertJsonStructure([
+                'meta' => ['request_id'],
+            ]);
 
         $this->assertDatabaseHas('products', ['name' => 'New Product']);
     }
@@ -92,7 +99,7 @@ class ProductControllerTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('name', 'Case Product');
+            ->assertJsonPath('data.name', 'Case Product');
     }
 
     public function test_can_reserve_stock()
@@ -104,7 +111,11 @@ class ProductControllerTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonPath('remaining_stock', 6);
+            ->assertJsonPath('data.remaining_stock', 6)
+            ->assertJsonPath('remaining_stock', 6)
+            ->assertJsonStructure([
+                'meta' => ['request_id'],
+            ]);
 
         $this->assertEquals(6, $product->fresh()->stock);
     }
@@ -118,6 +129,10 @@ class ProductControllerTest extends TestCase
         ]);
 
         $response->assertStatus(400)
-            ->assertJsonPath('message', 'Insufficient stock');
+            ->assertJsonPath('message', 'Insufficient stock')
+            ->assertJsonStructure([
+                'errors',
+                'meta' => ['request_id'],
+            ]);
     }
 }

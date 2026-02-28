@@ -158,3 +158,7 @@ To support loose coupling, Kafka topics act as the primary communication contrac
 - Implement a true API Gateway (like Kong, or KrakenD) running at port `80` acting as a proxy layer with rate limiters.
 - Use OpenTelemetry for distributed tracing to correlate `Request-ID` across HTTP and Kafka hops.
 - Build Circuit Breakers using Laravel HTTP facades in `OrderController`.
+
+## Laravel Evolution Plan
+The phased Laravel adoption plan for this project is documented in:
+- `LARAVEL_ROADMAP.md`

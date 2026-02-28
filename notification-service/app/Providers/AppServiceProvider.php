@@ -4,8 +4,11 @@ namespace App\Providers;
 
 use App\Contracts\NotificationRepositoryInterface;
 use App\Contracts\NotificationServiceInterface;
+use App\Events\PaymentApprovedReceived;
+use App\Listeners\QueuePaymentApprovedNotification;
 use App\Repositories\NotificationRepository;
 use App\Services\NotificationService;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +27,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Event::listen(PaymentApprovedReceived::class, QueuePaymentApprovedNotification::class);
     }
 }

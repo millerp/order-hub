@@ -6,6 +6,7 @@ use App\Models\Order;
 use Illuminate\Console\Command;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Facades\Kafka;
+use OrderHub\Shared\Observability\TraceHeaders;
 
 class KafkaConsumePaymentCommand extends Command
 {
@@ -20,6 +21,7 @@ class KafkaConsumePaymentCommand extends Command
         $consumer = Kafka::consumer(['payment.approved', 'payment.failed'], 'order-service-group')
             ->withHandler(function (ConsumerMessage $message) {
                 $payload = $message->getBody();
+                $traceId = TraceHeaders::resolveFromPayloadAndHeaders($payload, $message->getHeaders() ?? []);
                 if (! isset($payload['order_id'], $payload['event_id'])) {
                     $this->warn('Skipping payment event with invalid payload.');
 
@@ -42,10 +44,10 @@ class KafkaConsumePaymentCommand extends Command
                 $topic = $message->getTopicName();
                 if ($topic === 'payment.approved') {
                     $order->status = 'paid';
-                    $this->info("Order {$order->id} marked as paid.");
+                    $this->info("Order {$order->id} marked as paid. trace_id={$traceId}");
                 } else {
                     $order->status = 'cancelled';
-                    $this->info("Order {$order->id} marked as cancelled.");
+                    $this->info("Order {$order->id} marked as cancelled. trace_id={$traceId}");
                 }
                 $order->save();
             })

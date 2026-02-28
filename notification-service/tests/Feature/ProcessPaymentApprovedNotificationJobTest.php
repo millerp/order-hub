@@ -25,7 +25,7 @@ class ProcessPaymentApprovedNotificationJobTest extends TestCase
             'payment_id' => '101',
             'order_id' => '501',
             'event_id' => 'event-101',
-            'status' => 'sent',
+            'status' => 'processing',
         ]);
     }
 

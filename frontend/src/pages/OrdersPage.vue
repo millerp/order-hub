@@ -1,10 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import api from '@/api'
 
 const orders = ref([])
 const loading = ref(true)
 const error = ref(null)
+const liveConnected = ref(false)
+let stream = null
 
 async function fetchOrders() {
   loading.value = true
@@ -32,7 +34,35 @@ function formatDate(d) {
   return new Date(d).toLocaleString()
 }
 
-onMounted(fetchOrders)
+function connectOrderStream() {
+  const token = sessionStorage.getItem('token')
+  if (!token) return
+
+  const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost/api/v1').replace(/\/$/, '')
+  const streamUrl = `${baseUrl}/orders/stream?access_token=${encodeURIComponent(token)}&max_iterations=20`
+
+  stream = new EventSource(streamUrl)
+  stream.onopen = () => { liveConnected.value = true }
+  stream.onerror = () => { liveConnected.value = false }
+  stream.addEventListener('orders', (event) => {
+    try {
+      const payload = JSON.parse(event.data)
+      orders.value = payload.data || []
+      error.value = null
+    } catch {
+      // no-op: keep last known state
+    }
+  })
+}
+
+onMounted(() => {
+  fetchOrders()
+  connectOrderStream()
+})
+
+onUnmounted(() => {
+  if (stream) stream.close()
+})
 </script>
 
 <template>
@@ -40,7 +70,12 @@ onMounted(fetchOrders)
     <div class="page-header">
       <div>
         <h1 class="page-title">My Orders</h1>
-        <p class="page-subtitle">Track the status of your orders</p>
+        <p class="page-subtitle">
+          Track the status of your orders
+          <span :class="['live-indicator', liveConnected ? 'is-on' : 'is-off']">
+            {{ liveConnected ? 'live' : 'offline' }}
+          </span>
+        </p>
       </div>
       <button class="btn btn-secondary" @click="fetchOrders">↺ Refresh</button>
     </div>
@@ -102,4 +137,7 @@ onMounted(fetchOrders)
 .empty-state a { color: var(--accent); text-decoration: none; }
 .order-id { font-weight: 600; font-family: monospace; font-size: 13px; color: var(--accent); }
 .orders-legend { margin-top: 20px; display: flex; gap: 20px; align-items: center; color: var(--text-muted); font-size: 13px; flex-wrap: wrap; }
+.live-indicator { margin-left: 10px; font-size: 11px; border-radius: 999px; padding: 2px 8px; text-transform: uppercase; letter-spacing: .04em; }
+.live-indicator.is-on { background: rgba(34, 197, 94, .15); color: #16a34a; }
+.live-indicator.is-off { background: rgba(234, 179, 8, .15); color: #ca8a04; }
 </style>

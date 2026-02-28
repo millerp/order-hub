@@ -6,28 +6,33 @@ use App\Models\User;
 
 class UserPolicy
 {
+    private function isAdmin(User $user): bool
+    {
+        return strtolower((string) $user->role) === 'admin';
+    }
+
     public function viewAny(User $user)
     {
-        return $user->role === 'admin';
+        return $this->isAdmin($user);
     }
 
     public function view(User $user, User $model)
     {
-        return $user->role === 'admin' || $user->id === $model->id;
+        return $this->isAdmin($user) || $user->id === $model->id;
     }
 
     public function create(User $user)
     {
-        return $user->role === 'admin';
+        return $this->isAdmin($user);
     }
 
     public function update(User $user, User $model)
     {
-        return $user->role === 'admin' || $user->id === $model->id;
+        return $this->isAdmin($user) || $user->id === $model->id;
     }
 
     public function delete(User $user, User $model)
     {
-        return $user->role === 'admin' || $user->id === $model->id;
+        return $this->isAdmin($user) || $user->id === $model->id;
     }
 }

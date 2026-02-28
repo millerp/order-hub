@@ -22,8 +22,13 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJsonStructure([
+                'data' => [
+                    'user' => ['id', 'name', 'email', 'role'],
+                    'token',
+                ],
+                'meta' => ['request_id'],
                 'user' => ['id', 'name', 'email', 'role'],
-                'token'
+                'token',
             ]);
 
         $this->assertDatabaseHas('users', [
@@ -45,8 +50,13 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
+                'data' => [
+                    'user' => ['id', 'name', 'email', 'role'],
+                    'token',
+                ],
+                'meta' => ['request_id'],
                 'user' => ['id', 'name', 'email', 'role'],
-                'token'
+                'token',
             ]);
     }
 
@@ -70,6 +80,40 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/v1/refresh');
 
         $response->assertStatus(401)
-            ->assertJsonPath('message', 'Token required');
+            ->assertJsonPath('message', 'Token required')
+            ->assertJsonStructure([
+                'errors',
+                'meta' => ['request_id'],
+            ]);
+    }
+
+    public function test_auth_responses_include_request_id_header()
+    {
+        $response = $this->postJson('/api/v1/refresh');
+
+        $response->assertHeader('X-Request-Id');
+        $this->assertNotEmpty($response->headers->get('X-Request-Id'));
+    }
+
+    public function test_login_endpoint_is_rate_limited()
+    {
+        User::factory()->create([
+            'email' => 'limit@example.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+        ]);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/api/v1/login', [
+                'email' => 'limit@example.com',
+                'password' => 'wrong_password',
+            ]);
+        }
+
+        $response = $this->postJson('/api/v1/login', [
+            'email' => 'limit@example.com',
+            'password' => 'wrong_password',
+        ]);
+
+        $response->assertStatus(429);
     }
 }

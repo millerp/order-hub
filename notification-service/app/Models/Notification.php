@@ -11,8 +11,10 @@ class Notification extends Model
         'order_id',
         'event_id',
         'occurred_at',
+        'trace_id',
         'type',
         'status',
+        'error_message',
     ];
 
     protected $casts = [
