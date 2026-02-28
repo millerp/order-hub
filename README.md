@@ -112,6 +112,29 @@ The script will:
 
 ---
 
+## Service Structure
+Each Laravel service in this monorepo follows the same base layout, with service-specific domain code:
+
+- `app/Http/Controllers`: API entry points (request/response orchestration).
+- `app/Http/Requests`: Input validation and authorization boundaries for endpoints.
+- `app/Http/Middleware`: Cross-cutting concerns (JWT auth, request/trace context).
+- `app/Services`: Core business use-cases and orchestration logic.
+- `app/Repositories`: Data access abstraction and persistence operations.
+- `app/Contracts`: Interfaces for service/repository dependencies.
+- `app/Models`: Eloquent models and data casting rules.
+- `app/Console/Commands`: Kafka consumers/producers and scheduled operational commands.
+- `routes/api.php` and `routes/console.php`: HTTP routes and scheduled/CLI workflows.
+- `database/migrations`: Service-owned schema (each service has its own database).
+- `tests/Feature` and `tests/Unit`: HTTP behavior, contracts, and domain-level tests.
+
+### Service Responsibilities
+- `auth-service`: User registration/login, JWT issuance and refresh, auth rate limiting.
+- `user-service`: User profile data and user-management policies.
+- `product-service`: Product catalog and stock reservation source of truth.
+- `order-service`: Order lifecycle, outbox publish, payment-event consumption, SSE order updates.
+- `payment-service`: Payment processing simulation and payment event publishing.
+- `notification-service`: Notification workflow, Horizon/queues, and payment-approved event handling.
+
 ### Manual Setup (Step-by-Step)
 1. Ensure Docker Desktop is running.
 2. Install PHP dependencies (including `laravel/octane`) in each service. From the repo root:
