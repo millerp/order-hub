@@ -20,6 +20,29 @@ In production scenarios, teams may choose different repository strategies (polyr
 - **Distributed Trace Context**: `trace_id` and `traceparent` are propagated across HTTP and Kafka.
 - **Real-time UX**: Orders page receives status updates via SSE (`/api/v1/orders/stream`).
 
+## Service Structure
+Each Laravel service in this monorepo follows the same base layout, with service-specific domain code:
+
+- `app/Http/Controllers`: API entry points (request/response orchestration).
+- `app/Http/Requests`: Input validation and authorization boundaries for endpoints.
+- `app/Http/Middleware`: Cross-cutting concerns (JWT auth, request/trace context).
+- `app/Services`: Core business use-cases and orchestration logic.
+- `app/Repositories`: Data access abstraction and persistence operations.
+- `app/Contracts`: Interfaces for service/repository dependencies.
+- `app/Models`: Eloquent models and data casting rules.
+- `app/Console/Commands`: Kafka consumers/producers and scheduled operational commands.
+- `routes/api.php` and `routes/console.php`: HTTP routes and scheduled/CLI workflows.
+- `database/migrations`: Service-owned schema (each service has its own database).
+- `tests/Feature` and `tests/Unit`: HTTP behavior, contracts, and domain-level tests.
+
+### Service Responsibilities
+- `auth-service`: User registration/login, JWT issuance and refresh, auth rate limiting.
+- `user-service`: User profile data and user-management policies.
+- `product-service`: Product catalog and stock reservation source of truth.
+- `order-service`: Order lifecycle, outbox publish, payment-event consumption, SSE order updates.
+- `payment-service`: Payment processing simulation and payment event publishing.
+- `notification-service`: Notification workflow, Horizon/queues, and payment-approved event handling.
+
 ## Event Flow Diagram
 ```mermaid
 sequenceDiagram
@@ -90,30 +113,6 @@ sequenceDiagram
 ![Order list screen](images/orderlist.png)
 </details>
 
-## Code Quality
-This project uses **Laravel Pint** for code style consistency. A Git pre-commit hook is provided to automatically run Pint on staged PHP files.
-
-The hook is automatically installed during the project initialization via `init-project.sh`. To install it manually, run:
-```bash
-chmod +x scripts/install-hooks.sh
-./scripts/install-hooks.sh
-```
-
-The hook will:
-1. Identify all staged PHP files.
-2. Group them by their respective service.
-3. Run the service-specific `vendor/bin/pint` on those files.
-4. Automatically re-stage any files that were fixed by Pint.
-
-## Laravel Octane (FrankenPHP)
-All Laravel API services run with **Laravel Octane** and **FrankenPHP** for high performance: the application stays in memory between requests. Each service is served on port `8000` inside its container.
-
-The Docker image includes FrankenPHP; the container runs Octane with file watching enabled by default in development:
-`php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --watch`.
-
-You can disable auto-reload per service with:
-`OCTANE_WATCH=false` in the service `.env`.
-
 ## Setup Instructions
 
 To simplify project startup, use the automated setup script:
@@ -136,29 +135,6 @@ The script will:
 10. **GitHub Actions**: Automated unit tests on PRs.
 
 ---
-
-## Service Structure
-Each Laravel service in this monorepo follows the same base layout, with service-specific domain code:
-
-- `app/Http/Controllers`: API entry points (request/response orchestration).
-- `app/Http/Requests`: Input validation and authorization boundaries for endpoints.
-- `app/Http/Middleware`: Cross-cutting concerns (JWT auth, request/trace context).
-- `app/Services`: Core business use-cases and orchestration logic.
-- `app/Repositories`: Data access abstraction and persistence operations.
-- `app/Contracts`: Interfaces for service/repository dependencies.
-- `app/Models`: Eloquent models and data casting rules.
-- `app/Console/Commands`: Kafka consumers/producers and scheduled operational commands.
-- `routes/api.php` and `routes/console.php`: HTTP routes and scheduled/CLI workflows.
-- `database/migrations`: Service-owned schema (each service has its own database).
-- `tests/Feature` and `tests/Unit`: HTTP behavior, contracts, and domain-level tests.
-
-### Service Responsibilities
-- `auth-service`: User registration/login, JWT issuance and refresh, auth rate limiting.
-- `user-service`: User profile data and user-management policies.
-- `product-service`: Product catalog and stock reservation source of truth.
-- `order-service`: Order lifecycle, outbox publish, payment-event consumption, SSE order updates.
-- `payment-service`: Payment processing simulation and payment event publishing.
-- `notification-service`: Notification workflow, Horizon/queues, and payment-approved event handling.
 
 ### Manual Setup (Step-by-Step)
 1. Ensure Docker Desktop is running.
@@ -204,12 +180,38 @@ Each Laravel service in this monorepo follows the same base layout, with service
    - Kafka-UI is available at `http://localhost:8080`.
    - Horizon dashboard is available at `http://localhost:8006/horizon`.
 
+## Code Quality
+This project uses **Laravel Pint** for code style consistency. A Git pre-commit hook is provided to automatically run Pint on staged PHP files.
+
+The hook is automatically installed during the project initialization via `init-project.sh`. To install it manually, run:
+```bash
+chmod +x scripts/install-hooks.sh
+./scripts/install-hooks.sh
+```
+
+The hook will:
+1. Identify all staged PHP files.
+2. Group them by their respective service.
+3. Run the service-specific `vendor/bin/pint` on those files.
+4. Automatically re-stage any files that were fixed by Pint.
+
+## Laravel Octane (FrankenPHP)
+All Laravel API services run with **Laravel Octane** and **FrankenPHP** for high performance: the application stays in memory between requests. Each service is served on port `8000` inside its container.
+
+The Docker image includes FrankenPHP; the container runs Octane with file watching enabled by default in development:
+`php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --watch`.
+
+You can disable auto-reload per service with:
+`OCTANE_WATCH=false` in the service `.env`.
+
 ## Kafka Topic Design
 To support loose coupling, Kafka topics act as the primary communication contract:
 - `order.created`: Contains `order_id`, `user_id`, `amount`, `status`, `trace_id`, `traceparent`. Consumed by Payment.
 - `payment.approved`: Contains `order_id`, `payment_id`, `event_id`, `occurred_at`, `trace_id`, `traceparent`. Consumed by Order and Notification.
 - `payment.failed`: Contains `order_id`, `payment_id`, `event_id`, `occurred_at`, `trace_id`, `traceparent`. Consumed by Order Service.
 - `payment.failed.dlq`: Dead-letter queue for persisting events failing multiple technical retries.
+
+---
 
 ## Design Decisions
 1. **JWT RS256 Validation**: Standard UUID/id validation is usually slow across networks. A central IDP (Auth Service) emits RS256 signed tokens using its private key. The public key is physically loaded into surrounding microservices, allowing them to decode and validate JWT offline. 
