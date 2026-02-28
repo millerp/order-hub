@@ -20,15 +20,23 @@ class UserController extends Controller
     {
         Gate::authorize('viewAny', User::class);
 
-        return UserResource::collection($this->userService->getAll());
+        return UserResource::collection($this->userService->getAll())->additional([
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+            ],
+        ]);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $user = $this->userService->getById((int) $id);
         Gate::authorize('view', $user);
 
-        return new UserResource($user);
+        return (new UserResource($user))->additional([
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+            ],
+        ]);
     }
 
     public function store(StoreUserRequest $request)
@@ -38,7 +46,12 @@ class UserController extends Controller
         $validated['password'] = '';
         $user = $this->userService->create($validated);
 
-        return response()->json(new UserResource($user), 201);
+        return response()->json([
+            'data' => new UserResource($user),
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+            ],
+        ], 201);
     }
 
     public function update(UpdateUserRequest $request, $id)
@@ -47,7 +60,12 @@ class UserController extends Controller
         Gate::authorize('update', $user);
         $user = $this->userService->update((int) $id, $request->validated());
 
-        return new UserResource($user);
+        return response()->json([
+            'data' => new UserResource($user),
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+            ],
+        ]);
     }
 
     public function destroy($id)
