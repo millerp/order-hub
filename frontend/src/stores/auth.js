@@ -13,17 +13,19 @@ export const useAuthStore = defineStore('auth', {
     actions: {
         async login(email, password) {
             const { data } = await api.post('/auth/login', { email, password })
-            this.token = data.token
-            this.user = data.user
-            sessionStorage.setItem('token', data.token)
-            sessionStorage.setItem('user', JSON.stringify(data.user))
+            const payload = data.data || data
+            this.token = payload.token
+            this.user = payload.user
+            sessionStorage.setItem('token', payload.token)
+            sessionStorage.setItem('user', JSON.stringify(payload.user))
         },
         async register(name, email, password, role = 'customer') {
             const { data } = await api.post('/auth/register', { name, email, password, role })
-            this.token = data.token
-            this.user = data.user
-            sessionStorage.setItem('token', data.token)
-            sessionStorage.setItem('user', JSON.stringify(data.user))
+            const payload = data.data || data
+            this.token = payload.token
+            this.user = payload.user
+            sessionStorage.setItem('token', payload.token)
+            sessionStorage.setItem('user', JSON.stringify(payload.user))
         },
         logout() {
             this.token = null

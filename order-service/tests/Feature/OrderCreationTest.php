@@ -30,7 +30,7 @@ class OrderCreationTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('status', 'pending');
+            ->assertJsonPath('data.status', 'pending');
 
         $this->assertDatabaseHas('orders', [
             'user_id' => 1,

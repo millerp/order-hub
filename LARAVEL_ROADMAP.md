@@ -28,6 +28,9 @@
   - Kafka consumer now dispatches domain events instead of directly dispatching queue jobs.
 - Product Service:
   - Authorization logic duplication removed from product FormRequests; authorization remains centralized in Gate/Policy.
+- API responses:
+  - Transitional standard response envelope (`data` + `meta.request_id`) added to Auth and Order write endpoints.
+  - Frontend auth store now supports both envelope and legacy payload format.
 
 ## Phase 3 (Advanced)
 - Full observability:

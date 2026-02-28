@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AttachRequestId;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api/v1',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->append(AttachRequestId::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request, \Throwable $e) {
@@ -30,13 +31,18 @@ return Application::configure(basePath: dirname(__DIR__))
                     $status = 401;
                 }
                 if ($status >= 500) {
-                    return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Internal server error',
+                        'request_id' => $request->attributes->get('request_id'),
+                    ], 500);
                 }
 
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage(),
                     'type' => class_basename($e),
+                    'request_id' => $request->attributes->get('request_id'),
                 ], $status);
             }
         });
