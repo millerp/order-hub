@@ -91,4 +91,28 @@ class OrderCreationTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('outbox_events', 0);
     }
+
+    public function test_orders_index_includes_meta_request_id(): void
+    {
+        $user = new DummyUser;
+        $user->id = 9;
+        $user->role = 'customer';
+        $this->actingAs($user);
+
+        \App\Models\Order::create([
+            'user_id' => 9,
+            'product_id' => 1,
+            'quantity' => 1,
+            'total_amount' => 20.50,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->getJson('/api/v1/orders');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data',
+                'meta' => ['request_id'],
+            ]);
+    }
 }

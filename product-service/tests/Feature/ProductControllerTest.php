@@ -22,7 +22,8 @@ class ProductControllerTest extends TestCase
             ->assertJsonStructure([
                 'data' => [
                     '*' => ['id', 'name', 'description', 'price', 'stock']
-                ]
+                ],
+                'meta' => ['request_id'],
             ]);
     }
 
@@ -34,7 +35,10 @@ class ProductControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('data.id', $product->id)
-            ->assertJsonPath('data.name', $product->name);
+            ->assertJsonPath('data.name', $product->name)
+            ->assertJsonStructure([
+                'meta' => ['request_id'],
+            ]);
     }
 
     public function test_can_create_product()

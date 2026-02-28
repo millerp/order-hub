@@ -17,18 +17,26 @@ class ProductController extends Controller
         private ProductServiceInterface $productService
     ) {}
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $products = $this->productService->getAll();
 
-        return ProductResource::collection($products);
+        return ProductResource::collection($products)->additional([
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+            ],
+        ]);
     }
 
-    public function show($id)
+    public function show(\Illuminate\Http\Request $request, $id)
     {
         $product = $this->productService->getById((int) $id);
 
-        return new ProductResource($product);
+        return (new ProductResource($product))->additional([
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+            ],
+        ]);
     }
 
     public function store(StoreProductRequest $request)

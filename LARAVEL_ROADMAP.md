@@ -31,6 +31,7 @@
 - API responses:
   - Transitional standard response envelope (`data` + `meta.request_id`) added to Auth and Order write endpoints.
   - Frontend auth store now supports both envelope and legacy payload format.
+  - Read endpoints for Products and Orders now include `meta.request_id` while preserving existing `data` structure.
 
 ## Phase 3 (Advanced)
 - Full observability:

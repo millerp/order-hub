@@ -17,7 +17,11 @@ class OrderController extends Controller
     {
         $orders = $this->orderService->getOrdersByUser((string) $request->user()->id);
 
-        return OrderResource::collection($orders);
+        return OrderResource::collection($orders)->additional([
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+            ],
+        ]);
     }
 
     public function store(StoreOrderRequest $request)
