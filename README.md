@@ -2,6 +2,14 @@
 
 OrderHub is a robust, event-driven microservices architecture built for a distributed marketplace. It leverages PHP 8.2+, Laravel 12, MySQL 8.4 LTS, Redis, and Apache Kafka.
 
+## About This Repository
+This project is intentionally maintained as a **single monorepo** for:
+- **study and learning** of microservices concepts in a practical environment;
+- **demonstration** of architectural patterns (event-driven flows, queues, idempotency, tracing, realtime updates);
+- **ease of understanding**, so all services, infrastructure, and frontend can be explored together end-to-end.
+
+In production scenarios, teams may choose different repository strategies (polyrepo or segmented monorepos) depending on scale, ownership, and deployment needs.
+
 ## Features
 - **Independent Microservices**: Services are completely decoupled with no cross-database access. 
 - **Event-Driven**: State changes flow asynchronously via Kafka (`order.created`, `payment.approved`, `payment.failed`).
