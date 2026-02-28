@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -16,23 +17,6 @@ for service in "${services[@]}"; do
     if [ ! -f "$service/.env" ]; then
         cp "$service/.env.example" "$service/.env"
         echo -e "${GREEN}Created .env for $service${NC}"
-        
-        # Adjust database configurations in .env according to docker-compose.yml
-        # Database name varies by service
-        db_name=$(echo $service | sed 's/-/_/')
-        sed -i "s/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/g" "$service/.env"
-        sed -i "s/# DB_HOST=127.0.0.1/DB_HOST=orderhub-$(echo $service | sed 's/-service/-db/')/g" "$service/.env"
-        sed -i "s/# DB_PORT=3306/DB_PORT=3306/g" "$service/.env"
-        sed -i "s/# DB_DATABASE=laravel/DB_DATABASE=$db_name/g" "$service/.env"
-        sed -i "s/# DB_USERNAME=root/DB_USERNAME=root/g" "$service/.env"
-        sed -i "s/# DB_PASSWORD=/DB_PASSWORD=secret/g" "$service/.env"
-        
-        # Adjust Redis
-        sed -i "s/REDIS_HOST=127.0.0.1/REDIS_HOST=orderhub-redis/g" "$service/.env"
-        sed -i "s/SESSION_DRIVER=database/SESSION_DRIVER=redis/g" "$service/.env"
-
-        # Set FrankenPHP as default Octane server
-        sed -i "s/OCTANE_SERVER=roadrunner/OCTANE_SERVER=frankenphp/g" "$service/.env"
 
         # Enable Telescope
         if ! grep -q "TELESCOPE_ENABLED" "$service/.env"; then
@@ -64,7 +48,7 @@ for service in "${services[@]}"; do
     mkdir -p "$service/storage/keys"
 done
 
-docker compose up -d auth-db user-db product-db order-db payment-db notification-db redis kafka
+docker compose up -d auth-db user-db product-db order-db payment-db notification-db redis kafka kafka-ui
 
 echo -e "${BLUE}Waiting for databases to start (15s)...${NC}"
 sleep 15
@@ -80,8 +64,9 @@ wait_for_container() {
     local wait_time=2
     echo -e "${BLUE}Waiting for $container_name to be running...${NC}"
     while [ $retries -gt 0 ]; do
-        status=$(docker inspect "$container_name" --format '{{.State.Status}}' 2>/dev/null)
-        if [ "$status" == "running" ]; then
+        is_running=$(docker inspect "$container_name" --format '{{.State.Running}}' 2>/dev/null || true)
+        health_status=$(docker inspect "$container_name" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' 2>/dev/null || true)
+        if [ "$is_running" = "true" ] && { [ "$health_status" = "healthy" ] || [ "$health_status" = "none" ]; }; then
             return 0
         fi
         sleep $wait_time
@@ -106,27 +91,26 @@ for service in "${services[@]}"; do
     container_name="orderhub-$service"
     
     # Wait for container to be ready before running artisan commands
-    if wait_for_container "$container_name"; then
-        echo -e "${BLUE}Configuring $service ($container_name)...${NC}"
+    wait_for_container "$container_name"
+    echo -e "${BLUE}Configuring $service ($container_name)...${NC}"
+    
+    echo "Generating application key..."
+    docker exec "$container_name" php artisan key:generate --no-interaction
+    
+    # 7. Generate RSA keys specifically for Auth Service and restart services that depend on it
+    if [ "$service" == "auth-service" ]; then
+        echo -e "${BLUE}Generating RSA keys for JWT in auth-service...${NC}"
+        # Ensure the directory exists inside the container
+        docker exec orderhub-auth-service mkdir -p storage/keys
+        # Generate keys properly inside the new directory
+        docker exec orderhub-auth-service bash -c "rm -f storage/keys/oauth-private.key storage/keys/oauth-public.key && openssl genrsa -out storage/keys/oauth-private.key 2048 && openssl rsa -in storage/keys/oauth-private.key -pubout -out storage/keys/oauth-public.key"
+        # Ensure permissions on keys
+        docker exec orderhub-auth-service chmod 644 storage/keys/oauth-public.key storage/keys/oauth-private.key
         
-        echo "Generating application key..."
-        docker exec "$container_name" php artisan key:generate --no-interaction
-        
-        # 7. Generate RSA keys specifically for Auth Service and restart services that depend on it
-        if [ "$service" == "auth-service" ]; then
-            echo -e "${BLUE}Generating RSA keys for JWT in auth-service...${NC}"
-            # Ensure the directory exists inside the container
-            docker exec orderhub-auth-service mkdir -p storage/keys
-            # Generate keys properly inside the new directory
-            docker exec orderhub-auth-service bash -c "rm -f storage/keys/oauth-private.key storage/keys/oauth-public.key && openssl genrsa -out storage/keys/oauth-private.key 2048 && openssl rsa -in storage/keys/oauth-private.key -pubout -out storage/keys/oauth-public.key"
-            # Ensure permissions on keys
-            docker exec orderhub-auth-service chmod 644 storage/keys/oauth-public.key storage/keys/oauth-private.key
-            
-            # Since we generated new keys, and containers might have been started with a placeholder
-            # and Octane might have cached it, we MUST restart the other services
-            echo -e "${BLUE}Restarting services to pick up the new keys...${NC}"
-            docker compose restart user-service product-service order-service payment-service notification-service
-        fi
+        # Since we generated new keys, and containers might have been started with a placeholder
+        # and Octane might have cached it, we MUST restart the other services
+        echo -e "${BLUE}Restarting services to pick up the new keys...${NC}"
+        docker compose restart user-service product-service order-service payment-service notification-service
     fi
 done
 
@@ -158,4 +142,3 @@ fi
 
 echo -e "${GREEN}Installation completed successfully!${NC}"
 echo -e "Access the project at http://localhost"
-

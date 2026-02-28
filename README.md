@@ -164,7 +164,7 @@ The script will:
    ```
 5. Generate RSA keys for JWT tokens:
    ```bash
-   docker exec orderhub-auth-service bash -c "openssl genrsa -out storage/oauth-private.key 2048 && openssl rsa -in storage/oauth-private.key -pubout -out storage/oauth-public.key"
+   docker exec orderhub-auth-service bash -c "mkdir -p storage/keys && openssl genrsa -out storage/keys/oauth-private.key 2048 && openssl rsa -in storage/keys/oauth-private.key -pubout -out storage/keys/oauth-public.key"
    ```
    *Note: Due to Docker Volume bindings, the public key is automatically mounted into all other containers!*
 6. Initialize Kafka Topics:
