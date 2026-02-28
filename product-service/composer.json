@@ -29,7 +29,10 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
-            "OrderHub\\Shared\\": "/packages/orderhub-shared/src/",
+            "OrderHub\\Shared\\": [
+                "../packages/orderhub-shared/src/",
+                "/packages/orderhub-shared/src/"
+            ],
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }
