@@ -24,35 +24,45 @@ In production scenarios, teams may choose different repository strategies (polyr
 ```mermaid
 sequenceDiagram
     participant Client
+    participant Gateway
     participant Auth
     participant Product
     participant Order
     participant Payment
     participant Notification
+    participant Frontend
     
-    Client->>Auth: POST /register
+    Client->>Gateway: POST /api/v1/auth/register
+    Gateway->>Auth: Forward request
     Auth-->>Client: Returns JWT Token (RS256)
     
-    Client->>Order: POST /orders (Requires Token)
-    Order->>Product: GET /products/{id} (HTTP Sync)
-    Order->>Product: POST /reserve (HTTP Sync)
+    Client->>Gateway: POST /api/v1/orders (JWT + X-Trace-Id)
+    Gateway->>Order: Forward request (trace headers)
+    Order->>Product: GET /products/{id} (HTTP Sync + trace headers)
+    Order->>Product: POST /reserve (HTTP Sync + trace headers)
     Product-->>Order: Stock Reserved successfully
     Order->>Order DB: Creates Order (status: pending)
-    Order->>Payment: Publishes `order.created` (Kafka)
+    Order->>Kafka: Publishes `order.created` (trace_id + traceparent)
     Order-->>Client: Returns Order details
     
-    Payment->>Payment: Consumes `order.created`
+    Payment->>Kafka: Consumes `order.created`
     Payment->>Payment: Processes simulation (80% success rate)
     alt Payment Succeeded
-        Payment->>Order: Publishes `payment.approved`
-        Payment->>Notification: Publishes `payment.approved`
-        Order->>Order: Consumes `payment.approved` -> Status 'paid'
-        Notification->>Notification: Sends confirmation email
+        Payment->>Kafka: Publishes `payment.approved` (event_id + trace context)
+        Order->>Kafka: Consumes `payment.approved` -> Status 'paid'
+        Notification->>Kafka: Consumes `payment.approved`
+        Notification->>Notification: Dispatch Bus::batch([Process -> Finalize])
+        Notification->>Notification DB: Persist sent notification
     else Payment Failed
-        Payment->>Order: Publishes `payment.failed`
-        Order->>Order: Consumes `payment.failed` -> Status 'cancelled'
-        Payment->>Payment: Send to dead-letter queue (DLQ) if technical errors persist
+        Payment->>Kafka: Publishes `payment.failed` (event_id + trace context)
+        Order->>Kafka: Consumes `payment.failed` -> Status 'cancelled'
+        Payment->>Kafka: Send to dead-letter queue (DLQ) if technical errors persist
+        Notification->>Notification DB: Compensation job marks failure when needed
     end
+
+    Frontend->>Gateway: GET /api/v1/orders/stream (SSE)
+    Gateway->>Order: Proxy SSE stream
+    Order-->>Frontend: Real-time order status updates
 ```
 
 ## Code Quality
