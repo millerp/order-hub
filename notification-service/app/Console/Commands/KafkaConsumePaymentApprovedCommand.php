@@ -2,11 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessPaymentApprovedNotification;
+use App\Domain\PaymentApprovedPayload;
+use App\Events\PaymentApprovedReceived;
 use App\Models\Notification;
 use Illuminate\Console\Command;
+use InvalidArgumentException;
 use Junges\Kafka\Contracts\ConsumerMessage;
 use Junges\Kafka\Facades\Kafka;
+use OrderHub\Shared\Observability\TraceHeaders;
 
 class KafkaConsumePaymentApprovedCommand extends Command
 {
@@ -21,16 +24,18 @@ class KafkaConsumePaymentApprovedCommand extends Command
         $consumer = Kafka::consumer(['payment.approved'], 'notification-service-group')
             ->withHandler(function (ConsumerMessage $message) {
                 $payload = $message->getBody();
-                if (! isset($payload['payment_id'], $payload['order_id'], $payload['event_id'])) {
-                    $this->warn('Skipping payment.approved event with invalid payload.');
+                try {
+                    $contract = PaymentApprovedPayload::fromArray($payload);
+                } catch (InvalidArgumentException $e) {
+                    $this->warn($e->getMessage());
 
                     return;
                 }
+                $traceId = TraceHeaders::resolveFromPayloadAndHeaders($payload, $message->getHeaders() ?? []);
 
-                $paymentId = $payload['payment_id'];
-                $orderId = $payload['order_id'];
-                $eventId = $payload['event_id'];
-                $occurredAt = $payload['occurred_at'] ?? null;
+                $paymentId = $contract->paymentId;
+                $orderId = $contract->orderId;
+                $eventId = $contract->eventId;
 
                 if (Notification::where('event_id', $eventId)->exists() || Notification::where('payment_id', $paymentId)->exists()) {
                     $this->info("Notification for payment $paymentId already sent. Skipping.");
@@ -38,8 +43,8 @@ class KafkaConsumePaymentApprovedCommand extends Command
                     return;
                 }
 
-                ProcessPaymentApprovedNotification::dispatch($paymentId, $orderId, $eventId, $occurredAt);
-                $this->info("Notification job dispatched for Order $orderId");
+                event(new PaymentApprovedReceived($contract));
+                $this->info("PaymentApprovedReceived event dispatched for Order $orderId trace_id=$traceId");
             })
             ->build();
 

@@ -22,8 +22,13 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJsonStructure([
+                'data' => [
+                    'user' => ['id', 'name', 'email', 'role'],
+                    'token',
+                ],
+                'meta' => ['request_id'],
                 'user' => ['id', 'name', 'email', 'role'],
-                'token'
+                'token',
             ]);
 
         $this->assertDatabaseHas('users', [
@@ -45,8 +50,13 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
+                'data' => [
+                    'user' => ['id', 'name', 'email', 'role'],
+                    'token',
+                ],
+                'meta' => ['request_id'],
                 'user' => ['id', 'name', 'email', 'role'],
-                'token'
+                'token',
             ]);
     }
 
@@ -70,7 +80,11 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/v1/refresh');
 
         $response->assertStatus(401)
-            ->assertJsonPath('message', 'Token required');
+            ->assertJsonPath('message', 'Token required')
+            ->assertJsonStructure([
+                'errors',
+                'meta' => ['request_id'],
+            ]);
     }
 
     public function test_auth_responses_include_request_id_header()

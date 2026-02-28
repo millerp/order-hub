@@ -30,7 +30,7 @@ class OrderCreationTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('status', 'pending');
+            ->assertJsonPath('data.status', 'pending');
 
         $this->assertDatabaseHas('orders', [
             'user_id' => 1,
@@ -90,5 +90,50 @@ class OrderCreationTest extends TestCase
 
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('outbox_events', 0);
+    }
+
+    public function test_orders_index_includes_meta_request_id(): void
+    {
+        $user = new DummyUser;
+        $user->id = 9;
+        $user->role = 'customer';
+        $this->actingAs($user);
+
+        \App\Models\Order::create([
+            'user_id' => 9,
+            'product_id' => 1,
+            'quantity' => 1,
+            'total_amount' => 20.50,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->getJson('/api/v1/orders');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data',
+                'meta' => ['request_id', 'trace_id'],
+            ]);
+    }
+
+    public function test_orders_stream_returns_sse_content_type(): void
+    {
+        $user = new DummyUser;
+        $user->id = 10;
+        $user->role = 'customer';
+        $this->actingAs($user);
+
+        \App\Models\Order::create([
+            'user_id' => 10,
+            'product_id' => 2,
+            'quantity' => 1,
+            'total_amount' => 10.00,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->get('/api/v1/orders/stream?max_iterations=1');
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'text/event-stream; charset=UTF-8');
     }
 }

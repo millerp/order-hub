@@ -17,24 +17,106 @@ class OrderController extends Controller
     {
         $orders = $this->orderService->getOrdersByUser((string) $request->user()->id);
 
-        return OrderResource::collection($orders);
+        return OrderResource::collection($orders)->additional([
+            'meta' => [
+                'request_id' => $request->attributes->get('request_id'),
+                'trace_id' => $request->attributes->get('trace_id'),
+                'traceparent' => $request->attributes->get('traceparent'),
+            ],
+        ]);
     }
 
     public function store(StoreOrderRequest $request)
     {
         $validated = $request->validated();
         $validated['user_id'] = $request->user()->id;
+        $traceId = (string) $request->attributes->get('trace_id');
 
         try {
-            $order = $this->orderService->createOrder($validated, $request->bearerToken());
+            $order = $this->orderService->createOrder($validated, $request->bearerToken(), $traceId);
 
-            return response()->json(new OrderResource($order), 201);
+            return response()->json([
+                'data' => new OrderResource($order),
+                'meta' => [
+                    'request_id' => $request->attributes->get('request_id'),
+                    'trace_id' => $traceId,
+                    'traceparent' => $request->attributes->get('traceparent'),
+                ],
+            ], 201);
         } catch (\RuntimeException $e) {
             $code = $e->getCode();
             $status = is_int($code) && $code >= 400 ? $code : 500;
             $message = $e->getCode() === 503 ? 'Service temporarily unavailable' : $e->getMessage();
 
-            return response()->json(['message' => $message], $status);
+            return response()->json([
+                'message' => $message,
+                'errors' => [
+                    ['message' => $message],
+                ],
+                'meta' => [
+                    'request_id' => $request->attributes->get('request_id'),
+                    'trace_id' => $traceId,
+                    'traceparent' => $request->attributes->get('traceparent'),
+                ],
+            ], $status);
         }
+    }
+
+    public function stream(Request $request)
+    {
+        $userId = (string) $request->user()->id;
+        $requestId = (string) $request->attributes->get('request_id');
+        $traceId = (string) $request->attributes->get('trace_id');
+        $traceparent = (string) $request->attributes->get('traceparent');
+        $maxIterations = max(1, min(20, (int) $request->query('max_iterations', 20)));
+
+        return response()->stream(function () use ($userId, $requestId, $traceId, $traceparent, $maxIterations) {
+            $lastHash = null;
+
+            for ($i = 0; $i < $maxIterations; $i++) {
+                if (connection_aborted()) {
+                    break;
+                }
+
+                $orders = $this->orderService->getOrdersByUser($userId)->map(fn ($order) => [
+                    'id' => $order->id,
+                    'product_id' => $order->product_id,
+                    'quantity' => $order->quantity,
+                    'total_amount' => $order->total_amount,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at,
+                ])->values();
+
+                $payload = [
+                    'data' => $orders,
+                    'meta' => [
+                        'request_id' => $requestId,
+                        'trace_id' => $traceId,
+                        'traceparent' => $traceparent,
+                        'emitted_at' => now()->toIso8601String(),
+                    ],
+                ];
+                $json = json_encode($payload);
+                $hash = md5((string) $json);
+
+                if ($hash !== $lastHash) {
+                    echo "event: orders\n";
+                    echo "data: {$json}\n\n";
+                    $lastHash = $hash;
+
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                }
+
+                sleep(2);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache, no-transform',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 }
