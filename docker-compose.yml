@@ -293,6 +293,12 @@ services:
       - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:consume-payment
+    healthcheck:
+      test: ["CMD-SHELL", "tr '\\0' ' ' </proc/1/cmdline | grep -q 'kafka:consume-payment'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     depends_on:
       - kafka
       - order-db
@@ -305,6 +311,12 @@ services:
       - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:publish-outbox
+    healthcheck:
+      test: ["CMD-SHELL", "tr '\\0' ' ' </proc/1/cmdline | grep -q 'kafka:publish-outbox'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     depends_on:
       - kafka
       - order-db
@@ -317,6 +329,12 @@ services:
       - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan schedule:work
+    healthcheck:
+      test: ["CMD-SHELL", "tr '\\0' ' ' </proc/1/cmdline | grep -q 'schedule:work'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     depends_on:
       - order-db
 
@@ -328,6 +346,12 @@ services:
       - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:consume-order
+    healthcheck:
+      test: ["CMD-SHELL", "tr '\\0' ' ' </proc/1/cmdline | grep -q 'kafka:consume-order'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     depends_on:
       - kafka
       - payment-db
@@ -340,6 +364,12 @@ services:
       - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan kafka:consume-payment-approved
+    healthcheck:
+      test: ["CMD-SHELL", "tr '\\0' ' ' </proc/1/cmdline | grep -q 'kafka:consume-payment-approved'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     depends_on:
       - kafka
       - notification-db
@@ -352,6 +382,12 @@ services:
       - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan schedule:work
+    healthcheck:
+      test: ["CMD-SHELL", "tr '\\0' ' ' </proc/1/cmdline | grep -q 'schedule:work'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     depends_on:
       - notification-db
 
@@ -363,6 +399,12 @@ services:
       - ./packages/orderhub-shared:/packages/orderhub-shared:ro
       - ./auth-service/storage/keys:/app/storage/keys:ro
     command: php artisan horizon
+    healthcheck:
+      test: ["CMD-SHELL", "tr '\\0' ' ' </proc/1/cmdline | grep -q 'artisan horizon'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     depends_on:
       - redis
       - notification-db
