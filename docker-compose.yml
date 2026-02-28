@@ -30,6 +30,12 @@ services:
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
       - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
       - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - orderhub-network
 
@@ -39,6 +45,11 @@ services:
     container_name: orderhub-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     networks:
       - orderhub-network
 
@@ -56,6 +67,12 @@ services:
       - orderhub-network
     depends_on:
       - kafka
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || wget -q -O /dev/null http://localhost:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   # Databases (One per service)
   auth-db:
@@ -66,6 +83,12 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
       - "33061:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - orderhub-network
 
@@ -77,6 +100,12 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
       - "33062:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - orderhub-network
 
@@ -88,6 +117,12 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
       - "33063:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - orderhub-network
 
@@ -99,6 +134,12 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
       - "33064:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - orderhub-network
 
@@ -110,6 +151,12 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
       - "33065:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - orderhub-network
 
@@ -121,6 +168,12 @@ services:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
       - "33066:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - orderhub-network
 
@@ -132,6 +185,12 @@ services:
       - ./auth-service:/app
     ports:
       - "8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     depends_on:
       - auth-db
 
@@ -144,6 +203,12 @@ services:
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8002:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     depends_on:
       - user-db
 
@@ -156,6 +221,12 @@ services:
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8003:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     depends_on:
       - product-db
 
@@ -168,6 +239,12 @@ services:
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8004:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     depends_on:
       - order-db
 
@@ -180,6 +257,12 @@ services:
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8005:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     depends_on:
       - payment-db
 
@@ -192,6 +275,12 @@ services:
       - ./auth-service/storage/keys:/app/storage/keys:ro
     ports:
       - "8006:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     depends_on:
       - notification-db
 
@@ -300,6 +389,12 @@ services:
       - user-service
       - product-service
       - order-service
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/up || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
 networks:
   orderhub-network:
