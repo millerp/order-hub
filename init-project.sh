@@ -158,3 +158,4 @@ fi
 
 echo -e "${GREEN}Installation completed successfully!${NC}"
 echo -e "Access the project at http://localhost"
+
