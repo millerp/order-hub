@@ -1,12 +1,16 @@
 # OrderHub - Microservices Architecture
 
-OrderHub is a robust, event-driven microservices architecture built for a distributed marketplace. It leverages the latest stable versions of PHP 8.4, Laravel 12, MySQL 8.4 LTS, Redis, and Apache Kafka. 
+OrderHub is a robust, event-driven microservices architecture built for a distributed marketplace. It leverages PHP 8.2+, Laravel 12, MySQL 8.4 LTS, Redis, and Apache Kafka.
 
 ## Features
 - **Independent Microservices**: Services are completely decoupled with no cross-database access. 
 - **Event-Driven**: State changes flow asynchronously via Kafka (`order.created`, `payment.approved`, `payment.failed`).
 - **Synchronous Edges**: HTTP protocol is used strictly for synchronously required validations (e.g., stock availability checks before finalization).
 - **Stateless Authorization**: JWT (RS256) is minted by the Auth Service, and its public key is distributed to all other microservices for local token validation via custom middleware.
+- **Shared Kernel**: Common auth/event/tracing primitives are centralized in `packages/orderhub-shared`.
+- **Queue Orchestration**: Notification flow uses `Bus::batch` + chain + compensation job for richer failure handling.
+- **Distributed Trace Context**: `trace_id` and `traceparent` are propagated across HTTP and Kafka.
+- **Real-time UX**: Orders page receives status updates via SSE (`/api/v1/orders/stream`).
 
 ## Event Flow Diagram
 ```mermaid
@@ -136,9 +140,9 @@ The script will:
 
 ## Kafka Topic Design
 To support loose coupling, Kafka topics act as the primary communication contract:
-- `order.created`: Contains `order_id`, `user_id`, `amount`, and `status`. Consumed by Payment.
-- `payment.approved`: Contains `order_id` and `payment_id`. Consumed by Order and Notification.
-- `payment.failed`: Contains `order_id` and `payment_id`. Consumed by Order Service.
+- `order.created`: Contains `order_id`, `user_id`, `amount`, `status`, `trace_id`, `traceparent`. Consumed by Payment.
+- `payment.approved`: Contains `order_id`, `payment_id`, `event_id`, `occurred_at`, `trace_id`, `traceparent`. Consumed by Order and Notification.
+- `payment.failed`: Contains `order_id`, `payment_id`, `event_id`, `occurred_at`, `trace_id`, `traceparent`. Consumed by Order Service.
 - `payment.failed.dlq`: Dead-letter queue for persisting events failing multiple technical retries.
 
 ## Design Decisions
@@ -150,15 +154,11 @@ To support loose coupling, Kafka topics act as the primary communication contrac
 - **Failures & DLQ**: Simulated technical errors trigger the catch block. If exceptions are thrown in message parsing or processing, the event is redirected to a `.dlq` (Dead-letter queue) topic ensuring partition pointers can continue without choking.
 
 ## Trade-offs Made
-- Due to strict independent microservice standards, shared configurations and code blocks (like `JwtMiddleware`) were duplicated. In larger environments, this could be extracted into an interior composer package.
-- Default Laravel `web` and `api` configs were adjusted manually because standard boilerplate is heavy.
-- Docker containers run via **Laravel Octane (RoadRunner)** instead of Nginx/FPM for high throughput and in-memory request handling per service.
+- A shared-kernel package was introduced to reduce duplication, but it is still local to this monorepo (`packages/orderhub-shared`) instead of a separately versioned private package.
+- The system mixes synchronous HTTP with asynchronous Kafka to keep ordering/stock guarantees simple; this increases coupling on critical paths.
+- Docker containers run via **Laravel Octane (FrankenPHP)** for high throughput and in-memory request handling per service.
 
 ## Future Improvements
-- Implement a true API Gateway (like Kong, or KrakenD) running at port `80` acting as a proxy layer with rate limiters.
-- Use OpenTelemetry for distributed tracing to correlate `Request-ID` across HTTP and Kafka hops.
-- Build Circuit Breakers using Laravel HTTP facades in `OrderController`.
-
-## Laravel Evolution Plan
-The phased Laravel adoption plan for this project is documented in:
-- `LARAVEL_ROADMAP.md`
+- Add full OpenTelemetry export pipeline (collector + backend + dashboards), beyond current trace context propagation.
+- Version and publish the shared kernel as a private Composer package to decouple service release cycles.
+- Expand contract tests in CI to include cross-service consumer compatibility checks per event version.
