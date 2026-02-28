@@ -34,7 +34,7 @@
   - Exception handlers in Auth, Order, Product, and User services now include `errors` and `meta.request_id`.
   - Transitional compatibility fields were preserved where needed (for example, legacy auth/product fields consumed by current clients).
 
-## Phase 3 (Advanced)
+## Phase 3 (Implemented)
 - Full observability:
   - OpenTelemetry + distributed trace correlation across HTTP and Kafka.
 - Queue orchestration:
@@ -44,14 +44,20 @@
 - Internal shared package:
   - Extract JWT middleware, event DTOs, and shared conventions into a private Composer package.
 
-### Phase 3 - Current Progress
+### Phase 3 - Completed Scope
 - Trace correlation (OpenTelemetry-ready):
   - `X-Trace-Id` middleware added to Order Service and propagated to response `meta.trace_id`.
   - `trace_id` now flows through `order.created` outbox payload to Kafka headers and into Payment/Notification events.
   - Payment and Notification persistence now store `trace_id` for cross-service correlation.
+  - `traceparent` propagation (W3C-compatible) was added in HTTP responses and Kafka message headers.
 - Queue orchestration:
-  - Notification processing migrated to `Bus::chain` (`ProcessPaymentApprovedNotification` -> `FinalizeNotificationDelivery`).
+  - Notification processing migrated to `Bus::batch` with an internal chain (`ProcessPaymentApprovedNotification` -> `FinalizeNotificationDelivery`).
   - Compensation job (`CompensateNotificationFailure`) added to recover failed notification workflows with failure reason.
 - Real-time UX:
   - SSE endpoint added in Order Service (`GET /api/v1/orders/stream`) for live order status updates.
   - Frontend Orders page now opens live stream and updates list/status in real time.
+- Internal shared package:
+  - Private shared kernel package added at `packages/orderhub-shared`.
+  - Shared JWT token decoder extracted and used by Product, User, and Order JWT middlewares.
+  - Shared event DTO contract extracted for `payment.approved` payload (`PaymentApprovedEventData`), consumed by Notification domain alias.
+  - Shared trace convention helpers (`TraceHeaders`) extracted and used by Order/Payment/Notification services.
