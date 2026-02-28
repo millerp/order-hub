@@ -9,5 +9,5 @@ interface OrderServiceInterface
 {
     public function getOrdersByUser(string $userId): Collection;
 
-    public function createOrder(array $data, ?string $bearerToken = null): Order;
+    public function createOrder(array $data, ?string $bearerToken = null, ?string $traceId = null): Order;
 }

@@ -23,6 +23,7 @@ class ProcessPaymentApprovedNotification implements ShouldQueue, ShouldBeUnique
         public readonly string $orderId,
         public readonly string $eventId,
         public readonly ?string $occurredAt = null,
+        public readonly ?string $traceId = null,
     ) {
         $this->onQueue('notification-emails');
     }
@@ -54,8 +55,9 @@ class ProcessPaymentApprovedNotification implements ShouldQueue, ShouldBeUnique
             'order_id' => $this->orderId,
             'event_id' => $this->eventId,
             'occurred_at' => $this->occurredAt,
+            'trace_id' => $this->traceId,
             'type' => 'email',
-            'status' => 'sent',
+            'status' => 'processing',
         ]);
     }
 }

@@ -44,7 +44,8 @@ class KafkaPublishOutboxCommand extends Command
             try {
                 Kafka::publish()
                     ->onTopic($event->event_type)
-                    ->withMessage(new Message(body: $event->payload))
+                    ->withMessage((new Message(body: $event->payload))
+                        ->withHeader('x-trace-id', (string) ($event->payload['trace_id'] ?? '')))
                     ->send();
 
                 $event->update([

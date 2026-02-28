@@ -30,6 +30,7 @@ class KafkaConsumePaymentApprovedCommand extends Command
 
                     return;
                 }
+                $traceId = (string) ($contract->traceId ?: ($message->getHeaders()['x-trace-id'] ?? ''));
 
                 $paymentId = $contract->paymentId;
                 $orderId = $contract->orderId;
@@ -42,7 +43,7 @@ class KafkaConsumePaymentApprovedCommand extends Command
                 }
 
                 event(new PaymentApprovedReceived($contract));
-                $this->info("PaymentApprovedReceived event dispatched for Order $orderId");
+                $this->info("PaymentApprovedReceived event dispatched for Order $orderId trace_id=$traceId");
             })
             ->build();
 

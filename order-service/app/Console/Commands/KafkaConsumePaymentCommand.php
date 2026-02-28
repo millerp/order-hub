@@ -20,6 +20,7 @@ class KafkaConsumePaymentCommand extends Command
         $consumer = Kafka::consumer(['payment.approved', 'payment.failed'], 'order-service-group')
             ->withHandler(function (ConsumerMessage $message) {
                 $payload = $message->getBody();
+                $traceId = (string) ($payload['trace_id'] ?? ($message->getHeaders()['x-trace-id'] ?? ''));
                 if (! isset($payload['order_id'], $payload['event_id'])) {
                     $this->warn('Skipping payment event with invalid payload.');
 
@@ -42,10 +43,10 @@ class KafkaConsumePaymentCommand extends Command
                 $topic = $message->getTopicName();
                 if ($topic === 'payment.approved') {
                     $order->status = 'paid';
-                    $this->info("Order {$order->id} marked as paid.");
+                    $this->info("Order {$order->id} marked as paid. trace_id={$traceId}");
                 } else {
                     $order->status = 'cancelled';
-                    $this->info("Order {$order->id} marked as cancelled.");
+                    $this->info("Order {$order->id} marked as cancelled. trace_id={$traceId}");
                 }
                 $order->save();
             })

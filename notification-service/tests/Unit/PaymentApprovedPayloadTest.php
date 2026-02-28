@@ -15,11 +15,13 @@ class PaymentApprovedPayloadTest extends TestCase
             'order_id' => '99',
             'event_id' => 'evt-123',
             'occurred_at' => '2026-02-28T18:00:00Z',
+            'trace_id' => 'trace-1',
         ]);
 
         $this->assertSame('12', $payload->paymentId);
         $this->assertSame('99', $payload->orderId);
         $this->assertSame('evt-123', $payload->eventId);
+        $this->assertSame('trace-1', $payload->traceId);
     }
 
     public function test_it_rejects_invalid_payload_contract(): void

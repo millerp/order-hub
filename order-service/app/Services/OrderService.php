@@ -22,11 +22,14 @@ class OrderService implements OrderServiceInterface
         return $this->orderRepository->getByUserId($userId);
     }
 
-    public function createOrder(array $data, ?string $bearerToken = null): Order
+    public function createOrder(array $data, ?string $bearerToken = null, ?string $traceId = null): Order
     {
-        $productResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data) {
+        $productResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data, $traceId) {
             return Http::productService()
                 ->withToken($bearerToken ?? '')
+                ->withHeaders([
+                    'X-Trace-Id' => $traceId ?? '',
+                ])
                 ->get("/products/{$data['product_id']}");
         });
 
@@ -40,9 +43,12 @@ class OrderService implements OrderServiceInterface
         $productData = $productResponse->json('data') ?? $productResponse->json();
         $totalAmount = $productData['price'] * $data['quantity'];
 
-        $reserveResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data) {
+        $reserveResponse = $this->circuitBreaker->call(function () use ($bearerToken, $data, $traceId) {
             return Http::productService()
                 ->withToken($bearerToken ?? '')
+                ->withHeaders([
+                    'X-Trace-Id' => $traceId ?? '',
+                ])
                 ->post("/products/{$data['product_id']}/reserve", [
                     'quantity' => $data['quantity'],
                 ]);
@@ -56,7 +62,7 @@ class OrderService implements OrderServiceInterface
             throw new \RuntimeException('Failed to reserve stock: '.json_encode($err), 400);
         }
 
-        return DB::transaction(function () use ($data, $totalAmount) {
+        return DB::transaction(function () use ($data, $totalAmount, $traceId) {
             $order = $this->orderRepository->create([
                 'user_id' => $data['user_id'],
                 'product_id' => $data['product_id'],
@@ -74,6 +80,7 @@ class OrderService implements OrderServiceInterface
                     'user_id' => (string) $order->user_id,
                     'amount' => (float) $order->total_amount,
                     'status' => 'pending',
+                    'trace_id' => $traceId,
                 ],
             ]);
 

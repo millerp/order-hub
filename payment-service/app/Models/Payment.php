@@ -11,6 +11,7 @@ class Payment extends Model
         'amount',
         'status',
         'retry_count',
+        'trace_id',
     ];
 
     protected $casts = [

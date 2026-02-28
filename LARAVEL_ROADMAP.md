@@ -43,3 +43,15 @@
   - Broadcast order/payment status updates to frontend.
 - Internal shared package:
   - Extract JWT middleware, event DTOs, and shared conventions into a private Composer package.
+
+### Phase 3 - Current Progress
+- Trace correlation (OpenTelemetry-ready):
+  - `X-Trace-Id` middleware added to Order Service and propagated to response `meta.trace_id`.
+  - `trace_id` now flows through `order.created` outbox payload to Kafka headers and into Payment/Notification events.
+  - Payment and Notification persistence now store `trace_id` for cross-service correlation.
+- Queue orchestration:
+  - Notification processing migrated to `Bus::chain` (`ProcessPaymentApprovedNotification` -> `FinalizeNotificationDelivery`).
+  - Compensation job (`CompensateNotificationFailure`) added to recover failed notification workflows with failure reason.
+- Real-time UX:
+  - SSE endpoint added in Order Service (`GET /api/v1/orders/stream`) for live order status updates.
+  - Frontend Orders page now opens live stream and updates list/status in real time.

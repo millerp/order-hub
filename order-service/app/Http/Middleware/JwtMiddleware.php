@@ -14,7 +14,7 @@ class JwtMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->bearerToken();
+        $token = $request->bearerToken() ?: $request->query('access_token');
         if (! $token) {
             return response()->json([
                 'message' => 'Token required',

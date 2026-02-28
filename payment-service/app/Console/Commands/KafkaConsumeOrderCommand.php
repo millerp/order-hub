@@ -24,6 +24,7 @@ class KafkaConsumeOrderCommand extends Command
                 $payload = $message->getBody();
                 $orderId = $payload['order_id'];
                 $amount = $payload['amount'];
+                $traceId = (string) ($payload['trace_id'] ?? ($message->getHeaders()['x-trace-id'] ?? Str::uuid()->toString()));
 
                 if (Payment::where('order_id', $orderId)->exists()) {
                     $this->info("Order $orderId already processed. Skipping.");
@@ -42,6 +43,7 @@ class KafkaConsumeOrderCommand extends Command
                         'order_id' => $orderId,
                         'amount' => $amount,
                         'status' => $status,
+                        'trace_id' => $traceId,
                     ]);
 
                     $topicName = $status === 'approved' ? 'payment.approved' : 'payment.failed';
@@ -54,11 +56,12 @@ class KafkaConsumeOrderCommand extends Command
                                 'status' => $status,
                                 'event_id' => (string) Str::uuid(),
                                 'occurred_at' => now()->toIso8601String(),
+                                'trace_id' => $traceId,
                             ]
-                        ))
+                        ))->withHeader('x-trace-id', $traceId)
                         ->send();
 
-                    $this->info("Processed payment for Order $orderId: $status");
+                    $this->info("Processed payment for Order $orderId: $status trace_id=$traceId");
 
                 } catch (\Exception $e) {
                     $this->error("Error processing order $orderId: ".$e->getMessage());
@@ -68,8 +71,9 @@ class KafkaConsumeOrderCommand extends Command
                             body: [
                                 'original_message' => $payload,
                                 'error' => $e->getMessage(),
+                                'trace_id' => $traceId,
                             ]
-                        ))
+                        ))->withHeader('x-trace-id', $traceId)
                         ->send();
                 }
             })

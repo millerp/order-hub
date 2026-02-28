@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AttachRequestId;
+use App\Http\Middleware\AttachTraceId;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(AttachRequestId::class);
+        $middleware->append(AttachTraceId::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request, \Throwable $e) {
@@ -38,8 +40,10 @@ return Application::configure(basePath: dirname(__DIR__))
                         ],
                         'meta' => [
                             'request_id' => $request->attributes->get('request_id'),
+                            'trace_id' => $request->attributes->get('trace_id'),
                         ],
                         'request_id' => $request->attributes->get('request_id'),
+                        'trace_id' => $request->attributes->get('trace_id'),
                     ], 500);
                 }
 
@@ -53,9 +57,11 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                     'meta' => [
                         'request_id' => $request->attributes->get('request_id'),
+                        'trace_id' => $request->attributes->get('trace_id'),
                     ],
                     'type' => class_basename($e),
                     'request_id' => $request->attributes->get('request_id'),
+                    'trace_id' => $request->attributes->get('trace_id'),
                 ], $status);
             }
         });
