@@ -3,5 +3,8 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home', ['service' => 'notification-service']);
+    return response()->json([
+        'service' => 'notification-service',
+        'status' => 'ok',
+    ]);
 });
