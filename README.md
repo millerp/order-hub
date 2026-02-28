@@ -130,7 +130,9 @@ The script will:
    ```
 7. Done! Endpoints are mapped to ports `8001-8006`.
    - Kafka workers run automatically in dedicated containers: `order-consumer`, `order-outbox-publisher`, `payment-consumer`, `notification-consumer`.
+   - Queue workers run with Laravel Horizon in `notification-horizon`.
    - Kafka-UI is available at `http://localhost:8080`.
+   - Horizon dashboard is available at `http://localhost:8006/horizon`.
 
 ## Kafka Topic Design
 To support loose coupling, Kafka topics act as the primary communication contract:
