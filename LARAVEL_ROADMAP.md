@@ -11,7 +11,7 @@
   - Scheduler in Notification Service for failed job pruning (`queue:prune-failed`).
   - Dedicated scheduler containers in Docker Compose.
 
-## Phase 2 (Next)
+## Phase 2 (Implemented)
 - Domain Events + Listeners:
   - Replace direct side effects in services with first-class events/listeners.
 - Contract tests between services:
@@ -21,7 +21,7 @@
 - Policy/RBAC consistency:
   - Remove duplicated auth checks from FormRequests and centralize in policies.
 
-### Phase 2 - Current Progress
+### Phase 2 - Completed Scope
 - Notification Service:
   - `payment.approved` Kafka payload is now validated by a dedicated contract object (`PaymentApprovedPayload`).
   - Domain event (`PaymentApprovedReceived`) and listener (`QueuePaymentApprovedNotification`) were introduced.
@@ -29,9 +29,10 @@
 - Product Service:
   - Authorization logic duplication removed from product FormRequests; authorization remains centralized in Gate/Policy.
 - API responses:
-  - Transitional standard response envelope (`data` + `meta.request_id`) added to Auth and Order write endpoints.
-  - Frontend auth store now supports both envelope and legacy payload format.
-  - Read endpoints for Products and Orders now include `meta.request_id` while preserving existing `data` structure.
+  - Standard response envelope (`data`, `meta.request_id`, `errors`) applied across Auth, Order, Product, and User service endpoints.
+  - JWT middleware error responses in Product, Order, and User services now follow the same envelope and include `request_id`.
+  - Exception handlers in Auth, Order, Product, and User services now include `errors` and `meta.request_id`.
+  - Transitional compatibility fields were preserved where needed (for example, legacy auth/product fields consumed by current clients).
 
 ## Phase 3 (Advanced)
 - Full observability:
